@@ -45,7 +45,7 @@ public class S3LoggingFilter extends AbstractLoggingFilter {
     protected void describeOperation(NetLoggerBuilder log, HttpServletRequest request,
           HttpServletResponse response) {
         super.describeOperation(log, request, response);
-        log.add("s3.access-key", request.getAttribute(S3JettyHandler.ACCESS_KEY_ATTRIBUTE));
-        log.add("s3.operation", request.getAttribute(S3JettyHandler.OPERATION_ATTRIBUTE));
+        log.add("s3.access-key", request.getAttribute(S3Servlet.ACCESS_KEY_ATTRIBUTE));
+        log.add("s3.operation", request.getAttribute(S3Servlet.OPERATION_ATTRIBUTE));
     }
 }

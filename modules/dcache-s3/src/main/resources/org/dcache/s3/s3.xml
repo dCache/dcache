@@ -213,23 +213,33 @@
         <ref bean="server-connector"/>
       </list>
     </property>
-    <property name="handler" value="#{rootContext.get()}"/>
+    <property name="handler" ref="rootContext"/>
   </bean>
 
-  <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
+  <bean id="rootContext" class="org.dcache.util.jetty.ServletContextFactoryBean">
     <description>Root servlet context</description>
-    <property name="contextPath" value="/"/>
-    <property name="handler">
-      <bean class="org.dcache.util.jetty.FilterHandler">
-        <property name="filter">
-          <bean class="org.dcache.s3.S3LoggingFilter"/>
-        </property>
-        <property name="handler">
-          <bean class="org.dcache.s3.S3JettyHandler">
-            <constructor-arg ref="s3-proxy-handler"/>
-          </bean>
-        </property>
-      </bean>
+    <property name="filters">
+      <list>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$FilterEntry">
+          <property name="name" value="logging"/>
+          <property name="filter">
+            <bean class="org.dcache.s3.S3LoggingFilter"/>
+          </property>
+        </bean>
+      </list>
+    </property>
+    <property name="servlets">
+      <list>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <property name="name" value="s3"/>
+          <property name="servlet">
+            <bean class="org.dcache.s3.S3Servlet">
+              <constructor-arg ref="s3-proxy-handler"/>
+            </bean>
+          </property>
+          <property name="pathSpecs" value="/"/>
+        </bean>
+      </list>
     </property>
   </bean>
 
@@ -268,7 +278,7 @@
     <property name="updateTime" value="${s3.loginbroker.update-period}"/>
     <property name="updateTimeUnit" value="${s3.loginbroker.update-period.unit}"/>
     <property name="updateThreshold" value="${s3.loginbroker.update-threshold}"/>
-    <property name="protocolEngine" value="org.dcache.s3.S3JettyHandler"/>
+    <property name="protocolEngine" value="org.dcache.s3.S3Servlet"/>
     <property name="protocolVersion" value="${s3.loginbroker.version}"/>
     <property name="protocolFamilies" value="${s3.loginbroker.family}"/>
     <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${s3.loginbroker.address}') }"/>

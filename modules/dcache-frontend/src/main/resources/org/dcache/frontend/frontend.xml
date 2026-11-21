@@ -377,29 +377,6 @@
         </property>
     </bean>
 
-    <bean id="jersey-servlet" class="org.eclipse.jetty.ee8.servlet.ServletHolder">
-        <constructor-arg name="name" value="rest"/>
-        <constructor-arg name="servlet">
-            <bean class="org.glassfish.jersey.servlet.ServletContainer">
-                <constructor-arg name="resourceConfig">
-                    <bean class="org.dcache.restful.DcacheRestApplication"/>
-                </constructor-arg>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-    <bean id="swagger-servlet" class="org.eclipse.jetty.ee8.servlet.ServletHolder">
-        <constructor-arg name="name" value="Jersey2Config"/>
-        <constructor-arg name="servlet">
-            <bean class="io.swagger.jersey.config.JerseyJaxrsConfig"/>
-        </constructor-arg>
-        <property name="initParameters">
-            <map>
-                <entry key="swagger.api.basepath" value="/api/v1"/>
-            </map>
-        </property>
-    </bean>
-
     <bean id="well-known-producer-factory-provider"
       class="org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider"
       init-method="initialize">
@@ -423,99 +400,28 @@
     <bean id="rate-limiter" class="org.dcache.util.jetty.RateLimitedHandler">
         <description>Blocks clients with too many authentication failures</description>
         <constructor-arg ref="rate-limiter-config"/>
-        <property name="handler">
-            <bean class="org.eclipse.jetty.server.Handler$Sequence">
-                <description>The REST API context, then everything else</description>
-                <constructor-arg>
-                    <list value-type="org.eclipse.jetty.server.Handler">
-                        <value>#{apiContextHandler.get()}</value>
-                        <value>#{rootContext.get()}</value>
-                    </list>
-                </constructor-arg>
-            </bean>
-        </property>
+        <property name="handler" ref="frontend-context"/>
     </bean>
 
-    <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
-        <description>Root servlet context for static content; unhandled requests get 404</description>
-        <property name="contextPath" value="/"/>
-        <property name="handler">
-            <bean class="org.eclipse.jetty.ee8.nested.HandlerList">
-                <property name="handlers">
-                    <list>
-                        <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
-                            <description>Provide access to dcache-view</description>
-                            <property name="directoriesListed" value="true"/>
-                            <property name="redirectWelcome" value="false" />
-                            <property name="baseResourceAsString" value="${frontend.dcache-view.dir}"/>
-                        </bean>
-                        <bean class="org.dcache.restful.util.StaticDataHandler">
-                            <description>Provide dCache configuration as JSON or JavaScript</description>
-                            <property name="path" value="${frontend.static.path}" />
-                            <property name="data">
-                                <bean class="org.dcache.restful.util.OidcDiscoveryConfigDecorator">
-                                    <property name="oidcDiscovery" ref="oidcDiscovery"/>
-                                    <property name="issuer" value="${frontend.authn.oidc.issuer}"/>
-                                    <property name="delegate">
-                                        <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
-                                            <property name="prefix" value="frontend.static"/>
-                                        </bean>
-                                    </property>
-                                </bean>
-                            </property>
-                        </bean>
-                        <bean class="org.dcache.util.jetty.PathContextHandler">
-                            <description>Provide access to dcache-view-admin</description>
-                            <property name="contextPath" value="/admin"/>
-                            <property name="handler">
-                                <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
-                                    <property name="directoriesListed" value="true"/>
-                                    <property name="baseResourceAsString" value="${frontend.dcache-view-admin.dir}"/>
-                                </bean>
-                            </property>
-                        </bean>
-                        <bean class="org.dcache.util.jetty.PathContextHandler">
-                            <property name="contextPath" value="/.well-known"/>
-                            <property name="allowNullPathInfo" value="true"/>
-                            <property name="handler">
-                                <bean class="org.dcache.util.jetty.NestedServletHandler">
-                                    <property name="servlet">
-                                        <bean class="org.dcache.services.httpd.handlers.WellKnownServlet">
-                                            <property name="factoryProvider" ref="well-known-producer-factory-provider"/>
-                                        </bean>
-                                    </property>
-                                </bean>
-                            </property>
-                        </bean>
-                    </list>
-                </property>
-            </bean>
-        </property>
-    </bean>
-
-  <bean id="authentication-handler" class="org.dcache.util.jetty.FilterHandler">
-    <description>Handler that authenticates a request</description>
-    <property name="filter">
-      <bean class="org.dcache.http.AuthenticationFilter">
-        <property name="loginStrategy" ref="cache-login-strategy"/>
-        <property name="readOnly" value="${frontend.authz.readonly}"/>
-        <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
-        <property name="realm" value="${frontend.authn.realm}"/>
-        <property name="acceptBearerTokenUnencrypted"
-                  value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
-        <property name="anonymousAccessiblePaths">
-            <description>
-                The OIDC callback is how a client with no prior credentials (only an
-                authorization code) establishes them; it must stay reachable even when
-                frontend.authz.anonymous-operations=NONE would otherwise reject the
-                credential-less request outright before the callback ever runs. The
-                callback performs its own authenticated login using the exchanged token.
-            </description>
-            <list>
-                <value>/api/v1/auth/callback</value>
-            </list>
-        </property>
-      </bean>
+  <bean id="authentication-filter" class="org.dcache.http.AuthenticationFilter">
+    <description>Filter that authenticates a request</description>
+    <property name="loginStrategy" ref="cache-login-strategy"/>
+    <property name="readOnly" value="${frontend.authz.readonly}"/>
+    <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
+    <property name="realm" value="${frontend.authn.realm}"/>
+    <property name="acceptBearerTokenUnencrypted"
+              value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
+    <property name="anonymousAccessiblePaths">
+        <description>
+            The OIDC callback is how a client with no prior credentials (only an
+            authorization code) establishes them; it must stay reachable even when
+            frontend.authz.anonymous-operations=NONE would otherwise reject the
+            credential-less request outright before the callback ever runs. The
+            callback performs its own authenticated login using the exchanged token.
+        </description>
+        <list>
+            <value>/api/v1/auth/callback</value>
+        </list>
     </property>
   </bean>
 
@@ -523,11 +429,10 @@
   <bean id="zkSessionDataStore"
     class="org.dcache.http.ZooKeeperSessionDataStore"/>
 
-  <!-- 2. SessionHandler, used by the authentication handler and the REST API -->
+  <!-- 2. SessionHandler, used by the authentication filter and the REST API -->
   <bean id="apiSessionHandler"
     class="org.eclipse.jetty.ee8.nested.SessionHandler">
     <property name="sessionCookie" value="DCACHE_API_SESSION"/>
-    <property name="handler" ref="authentication-handler"/>
   </bean>
 
   <!-- 3. SessionCache wrapping ZooKeeper store -->
@@ -549,79 +454,148 @@
     </property>
   </bean>
 
-  <!-- 5. ServletContextHandler for the REST API -->
-  <bean id="apiContextHandler" class="org.eclipse.jetty.ee8.servlet.ServletContextHandler">
-    <property name="contextPath" value="/api"/>
+  <!-- 5. The servlet context: the REST API, swagger-ui and dcache-view -->
+  <bean id="frontend-context" class="org.dcache.util.jetty.ServletContextFactoryBean">
+    <description>
+        Only requests to the REST API are logged and authenticated; static content
+        is served to anyone.
+    </description>
+    <property name="sessionHandler" ref="apiSessionHandler"/>
     <property name="eventListeners">
       <list>
+        <bean class="org.dcache.restful.util.SpringWebContextListener"/>
         <bean class="org.springframework.web.context.request.RequestContextListener"/>
       </list>
     </property>
-    <property name="servletHandler">
-      <bean class="org.dcache.restful.util.SpringWebServletHandler">
-        <property name="servlets">
-          <list>
-            <ref bean="swagger-servlet"/>
-            <ref bean="jersey-servlet"/>
-          </list>
-        </property>
-        <property name="servletMappings">
-          <list>
-            <bean class="org.eclipse.jetty.ee8.servlet.ServletMapping">
-              <property name="servletName" value="rest"/>
-              <property name="pathSpecs">
-                <list>
-                  <value>/v1/*</value>
-                </list>
-              </property>
-            </bean>
-          </list>
-        </property>
-      </bean>
-    </property>
-  </bean>
-
-  <!-- 6. Handlers in front of the REST API servlets: swagger content,
-          then logging, session and authentication -->
-  <bean id="api-insert"
-        class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="apiContextHandler"/>
-    <property name="targetMethod" value="insertHandler"/>
-    <property name="arguments">
+    <property name="filters">
       <list>
-        <bean class="org.dcache.util.jetty.FallThroughHandler">
-          <property name="first">
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$FilterEntry">
+          <property name="name" value="logging"/>
+          <property name="filter">
+            <bean class="org.dcache.restful.LoggingFilter"/>
+          </property>
+          <property name="servletNames" value="rest"/>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$FilterEntry">
+          <property name="name" value="authentication"/>
+          <property name="filter" ref="authentication-filter"/>
+          <property name="servletNames" value="rest"/>
+        </bean>
+      </list>
+    </property>
+    <property name="servlets">
+      <list>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <property name="name" value="rest"/>
+          <property name="servlet">
+            <bean class="org.glassfish.jersey.servlet.ServletContainer">
+              <constructor-arg name="resourceConfig">
+                <bean class="org.dcache.restful.DcacheRestApplication"/>
+              </constructor-arg>
+            </bean>
+          </property>
+          <property name="pathSpecs" value="/api/v1/*"/>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Configures swagger; serves no requests</description>
+          <property name="name" value="Jersey2Config"/>
+          <property name="servlet">
+            <bean class="io.swagger.jersey.config.JerseyJaxrsConfig"/>
+          </property>
+          <property name="initParameters">
+            <map>
+              <entry key="swagger.api.basepath" value="/api/v1"/>
+            </map>
+          </property>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Provide access to dCache customised swagger-ui</description>
+          <property name="name" value="swagger-ui"/>
+          <property name="servlet">
+            <bean class="org.dcache.restful.util.FileServlet">
+              <property name="file" value="${dcache.paths.swagger-ui.html}/index.html"/>
+            </bean>
+          </property>
+          <property name="pathSpecs">
             <list>
-              <bean class="org.dcache.util.jetty.PathContextHandler">
-                <description>Provide access to dCache customised swagger-ui</description>
-                <property name="contextPath" value="/v1"/>
-                <property name="handler">
-                  <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
-                    <property name="directoriesListed" value="true"/>
-                    <property name="baseResourceAsString" value="${dcache.paths.swagger-ui.html}"/>
-                  </bean>
-                </property>
-              </bean>
-              <bean class="org.dcache.util.jetty.PathContextHandler">
-                <description>Provide access to standard swagger-ui library</description>
-                <property name="contextPath" value="/libraries/swagger-ui"/>
-                <property name="allowNullPathInfo" value="true"/>
-                <property name="handler">
-                  <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
-                    <property name="directoriesListed" value="true"/>
-                    <property name="baseResourceAsString" value="jar:file:${dcache.paths.swagger-ui.jar}!${dcache.paths.swagger-ui.jar.internal}"/>
-                  </bean>
-                </property>
-              </bean>
+              <value>/api/v1</value>
+              <value>/api/v1/</value>
+              <value>/api/v1/index.html</value>
             </list>
           </property>
-          <property name="handler">
-            <bean class="org.dcache.util.jetty.FilterHandler">
-              <property name="filter">
-                <bean class="org.dcache.restful.LoggingFilter"/>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Provide access to standard swagger-ui library</description>
+          <property name="name" value="swagger-ui-library"/>
+          <property name="servlet">
+            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+          </property>
+          <property name="pathSpecs" value="/api/libraries/swagger-ui/*"/>
+          <property name="initParameters">
+            <map>
+              <entry key="baseResource"
+                     value="jar:file:${dcache.paths.swagger-ui.jar}!${dcache.paths.swagger-ui.jar.internal}"/>
+              <entry key="pathInfoOnly" value="true"/>
+              <entry key="dirAllowed" value="true"/>
+            </map>
+          </property>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Provide dCache configuration as JSON or JavaScript</description>
+          <property name="name" value="static-data"/>
+          <property name="servlet">
+            <bean class="org.dcache.restful.util.StaticDataServlet">
+              <property name="data">
+                <bean class="org.dcache.restful.util.OidcDiscoveryConfigDecorator">
+                  <property name="oidcDiscovery" ref="oidcDiscovery"/>
+                  <property name="issuer" value="${frontend.authn.oidc.issuer}"/>
+                  <property name="delegate">
+                    <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+                      <property name="prefix" value="frontend.static"/>
+                    </bean>
+                  </property>
+                </bean>
               </property>
-              <property name="handler" ref="apiSessionHandler"/>
             </bean>
+          </property>
+          <property name="pathSpecs" value="#{'${frontend.static.path}'.split(':')}"/>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Provide access to dcache-view-admin</description>
+          <property name="name" value="dcache-view-admin"/>
+          <property name="servlet">
+            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+          </property>
+          <property name="pathSpecs" value="/admin/*"/>
+          <property name="initParameters">
+            <map>
+              <entry key="baseResource" value="${frontend.dcache-view-admin.dir}"/>
+              <entry key="pathInfoOnly" value="true"/>
+              <entry key="dirAllowed" value="true"/>
+            </map>
+          </property>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <property name="name" value="well-known"/>
+          <property name="servlet">
+            <bean class="org.dcache.services.httpd.handlers.WellKnownServlet">
+              <property name="factoryProvider" ref="well-known-producer-factory-provider"/>
+            </bean>
+          </property>
+          <property name="pathSpecs" value="/.well-known/*"/>
+        </bean>
+        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
+          <description>Provide access to dcache-view; unknown paths get 404</description>
+          <property name="name" value="dcache-view"/>
+          <property name="servlet">
+            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+          </property>
+          <property name="pathSpecs" value="/"/>
+          <property name="initParameters">
+            <map>
+              <entry key="baseResource" value="${frontend.dcache-view.dir}"/>
+              <entry key="dirAllowed" value="true"/>
+            </map>
           </property>
         </bean>
       </list>
@@ -654,7 +628,7 @@
 
     <bean id="jetty" class="org.eclipse.jetty.server.Server"
           init-method="start" destroy-method="stop"
-          depends-on="api-insert,api-session-cache-inject">
+          depends-on="api-session-cache-inject">
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(

@@ -29,10 +29,9 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.gaul.s3proxy.AwsHttpHeaders;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyHandler;
@@ -43,13 +42,15 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
- * Jetty handler of the S3 door: binds the client address to the request thread, lets s3proxy
+ * Servlet of the S3 door: binds the client address to the request thread, lets s3proxy
  * handle the request and renders failures as S3 error documents.  Modelled on s3proxy's
  * {@code S3ProxyHandlerJetty}, which needs Jetty 12.
  */
-public class S3JettyHandler extends AbstractHandler {
+public class S3Servlet extends HttpServlet {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3JettyHandler.class);
+    private static final long serialVersionUID = 1L;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3Servlet.class);
 
     /**
      * Request attribute holding the access key a request claims, for the access log.
@@ -61,16 +62,15 @@ public class S3JettyHandler extends AbstractHandler {
      */
     static final String OPERATION_ATTRIBUTE = "org.dcache.s3.operation";
 
-    private final DcacheS3ProxyHandler handler;
+    private final transient DcacheS3ProxyHandler handler;
 
-    public S3JettyHandler(DcacheS3ProxyHandler handler) {
+    public S3Servlet(DcacheS3ProxyHandler handler) {
         this.handler = requireNonNull(handler);
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request,
-          HttpServletResponse response) throws IOException {
-        baseRequest.setHandled(true);
+    protected void service(HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
         accessKey(request).ifPresent(key -> request.setAttribute(ACCESS_KEY_ATTRIBUTE, key));
         var ctx = new S3ProxyHandler.RequestContext();
         InetAddress client = InetAddresses.forUriString(request.getRemoteAddr());

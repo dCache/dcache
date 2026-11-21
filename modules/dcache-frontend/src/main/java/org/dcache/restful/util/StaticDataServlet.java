@@ -1,6 +1,7 @@
 /* dCache - http://www.dcache.org/
  *
  * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,21 +18,17 @@
  */
 package org.dcache.restful.util;
 
-import com.google.common.base.Splitter;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.util.spring.Required;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.MetaData;
+import org.eclipse.jetty.http.QuotedQualityCSV;
 
 
 /**
@@ -39,7 +36,9 @@ import org.eclipse.jetty.http.MetaData;
  * static, but the representation is negotiable, based on the client-supplied preferences.  If the
  * client expresses no preference then the filename determines the format.
  */
-public class StaticDataHandler extends AbstractHandler {
+public class StaticDataServlet extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
 
     private static enum Media {
         JSON("application/json", "", "\n"),
@@ -56,13 +55,7 @@ public class StaticDataHandler extends AbstractHandler {
         }
     }
 
-    private List<String> paths;
     private String json;
-
-    @Required
-    public void setPath(String path) {
-        paths = Splitter.on(':').splitToList(path);
-    }
 
     @Required
     public void setData(Map<String, String> data) {
@@ -70,25 +63,25 @@ public class StaticDataHandler extends AbstractHandler {
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request,
-          HttpServletResponse response) throws IOException, ServletException {
-        if (isStarted() && !baseRequest.isHandled() && paths.contains(target)) {
-            if (request.getMethod().equals("GET")) {
-                handleRequest(target, baseRequest, response);
-                baseRequest.setHandled(true);
-            } else {
-                doError(target, baseRequest, request, response);
-            }
-        }
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
+        Media media = decideMedia(request.getServletPath(), request);
+
+        response.setContentType(media.mime);
+        response.setCharacterEncoding("UTF-8");
+        byte[] body = (media.pre + json + media.post).getBytes(StandardCharsets.UTF_8);
+        response.setContentLength(body.length);
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        response.getOutputStream().write(body);
     }
 
-    private Media decideMedia(String target, Request request) {
-        MetaData.Request metadata = request.getMetaData();
-        List<String> types = metadata == null
-              ? Collections.emptyList()
-              : metadata.getHttpFields().getQualityCSV(HttpHeader.ACCEPT);
+    private Media decideMedia(String target, HttpServletRequest request) {
+        QuotedQualityCSV types = new QuotedQualityCSV();
+        Collections.list(request.getHeaders(HttpHeader.ACCEPT.asString()))
+              .forEach(types::addValue);
 
-        for (String type : types) {
+        for (String type : types.getValues()) {
             switch (type) {
                 case "application/json":
                 case "text/json":
@@ -111,21 +104,5 @@ public class StaticDataHandler extends AbstractHandler {
         }
 
         return Media.JAVASCRIPT;
-    }
-
-    private void handleRequest(String target, Request request, HttpServletResponse response)
-          throws IOException {
-        Media media = decideMedia(target, request);
-
-        response.setContentType(media.mime);
-        response.setCharacterEncoding("UTF-8");
-        response.setContentLength(media.pre.length() + json.length() + media.post.length());
-        response.setStatus(HttpServletResponse.SC_OK);
-
-        PrintWriter writer = response.getWriter();
-        writer.print(media.pre);
-        writer.print(json);
-        writer.print(media.post);
-        writer.flush();
     }
 }

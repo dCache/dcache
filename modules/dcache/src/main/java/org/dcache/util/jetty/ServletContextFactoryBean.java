@@ -21,6 +21,7 @@ package org.dcache.util.jetty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.EnumSet;
+import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.DispatcherType;
@@ -61,6 +62,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
     private List<FilterEntry> filters = List.of();
     private List<ServletEntry> servlets = List.of();
     private List<String> baseResources = List.of();
+    private List<EventListener> eventListeners = List.of();
 
     public void setContextPath(String contextPath) {
         this.contextPath = requireNonNull(contextPath);
@@ -89,6 +91,14 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
         this.securityHandler = securityHandler;
     }
 
+    /**
+     * Sets the listeners of the context, e.g. a {@code ServletContextListener}, which is notified
+     * before the servlets are initialised.
+     */
+    public void setEventListeners(List<EventListener> eventListeners) {
+        this.eventListeners = List.copyOf(eventListeners);
+    }
+
     public void setFilters(List<FilterEntry> filters) {
         this.filters = List.copyOf(filters);
     }
@@ -107,6 +117,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
     protected Handler createInstance() {
         ServletContextHandler context = new ServletContextHandler(null, contextPath,
               sessionHandler, securityHandler, null, null);
+        eventListeners.forEach(context::addEventListener);
         if (!baseResources.isEmpty()) {
             ResourceFactory factory = ResourceFactory.of(context);
             List<Resource> resources = baseResources.stream()
@@ -142,6 +153,9 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
                 holder.setName(entry.name);
             }
             holder.setInitParameters(entry.initParameters);
+            if (entry.pathSpecs.isEmpty()) {
+                servletHandler.addServlet(holder);
+            }
             for (String pathSpec : entry.pathSpecs) {
                 context.addServlet(holder, pathSpec);
             }
@@ -198,7 +212,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
 
         private Servlet servlet;
         private String name;
-        private List<String> pathSpecs;
+        private List<String> pathSpecs = List.of();
         private Map<String, String> initParameters = Map.of();
 
         @Required
@@ -215,8 +229,9 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
 
         /**
          * Sets the servlet path specs the servlet serves, e.g. {@code /static/*} or {@code /}.
+         * A servlet without path specs serves no requests; it is only initialised, e.g. to
+         * configure the context.
          */
-        @Required
         public void setPathSpecs(List<String> pathSpecs) {
             this.pathSpecs = List.copyOf(pathSpecs);
         }

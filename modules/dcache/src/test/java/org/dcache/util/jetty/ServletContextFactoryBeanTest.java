@@ -36,6 +36,8 @@ import java.nio.file.Path;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -251,6 +253,26 @@ public class ServletContextFactoryBeanTest {
     }
 
     @Test
+    public void shouldInitialiseServletsWithoutPathSpecsAfterListeners() throws Exception {
+        start("<bean id='context' class='" + FACTORY + "'>"
+              + "  <property name='eventListeners'><list>"
+              + "    <bean class='" + AttributeListener.class.getName() + "'/>"
+              + "  </list></property>"
+              + "  <property name='servlets'><list>"
+              + "    <bean class='" + SERVLET + "'>"
+              + "      <property name='servlet'><bean class='" + ConfiguringServlet.class.getName() + "'/></property>"
+              + "    </bean>"
+              + "    <bean class='" + SERVLET + "'>"
+              + "      <property name='servlet'><bean class='" + AttributeServlet.class.getName() + "'/></property>"
+              + "      <property name='pathSpecs'><list><value>/</value></list></property>"
+              + "    </bean>"
+              + "  </list></property>"
+              + "</bean>");
+
+        assertThat(get("/any").body(), is("listener servlet"));
+    }
+
+    @Test
     public void shouldRequireServletOfEntry() {
         assertThrows(BeanCreationException.class,
               () -> start("<bean id='context' class='" + FACTORY + "'>"
@@ -337,6 +359,42 @@ public class ServletContextFactoryBeanTest {
             }
             response.getWriter().print(getInitParameter("name") + " "
                   + request.getServletPath() + " " + request.getPathInfo());
+        }
+    }
+
+    /**
+     * Sets the context attribute {@code listener} when the context starts.
+     */
+    public static class AttributeListener implements ServletContextListener {
+
+        @Override
+        public void contextInitialized(ServletContextEvent event) {
+            event.getServletContext().setAttribute("listener", "listener");
+        }
+    }
+
+    /**
+     * Sets the context attribute {@code servlet} from the attribute {@code listener} when
+     * initialised.
+     */
+    public static class ConfiguringServlet extends HttpServlet {
+
+        @Override
+        public void init() {
+            getServletContext().setAttribute("servlet",
+                  getServletContext().getAttribute("listener") + " servlet");
+        }
+    }
+
+    /**
+     * Writes the context attribute {@code servlet}.
+     */
+    public static class AttributeServlet extends HttpServlet {
+
+        @Override
+        protected void doGet(HttpServletRequest request, HttpServletResponse response)
+              throws IOException {
+            response.getWriter().print(getServletContext().getAttribute("servlet"));
         }
     }
 }
