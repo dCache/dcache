@@ -63,18 +63,17 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ApiModel(description = "Information about a unitgroup.")
+@Schema(description = "Information about a unitgroup.")
 public final class UnitGroup extends SelectionTypeWithLinks {
 
     private static final long serialVersionUID = -5173508468206889927L;
 
-    @ApiModelProperty("A list of units.  If any unit is satisfied by a request "
+    @Schema(description = "A list of units.  If any unit is satisfied by a request "
           + "then the unitgroup is satisfied by the request.")
     private final List<String> units;
 

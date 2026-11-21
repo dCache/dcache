@@ -18,16 +18,15 @@
  */
 package org.dcache.restful.providers;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashSet;
 import java.util.Set;
 
-@ApiModel(description = "Specifies all existing lables")
+@Schema(description = "Specifies all existing lables")
 public class JsonListLabels {
 
 
-    @ApiModelProperty("All existing labels.")
+    @Schema(description = "All existing labels.")
     private Set<String> labels = new HashSet();
 
     public void setLabels(Set<String> labelnames) {

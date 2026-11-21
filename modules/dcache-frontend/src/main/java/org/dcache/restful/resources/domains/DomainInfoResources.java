@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.domains;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Set;
@@ -76,7 +76,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.dcache.cells.json.DomainData;
 import org.dcache.restful.services.cells.DomainInfoService;
 import org.dcache.restful.util.Responses;
@@ -86,7 +85,8 @@ import org.springframework.stereotype.Component;
  * RESTful API to the {@link DomainInfoService} service.
  */
 @Component
-@Api(value = "domains", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "domains")
+@SecurityRequirement(name = "basicAuth")
 @Path("/domains")
 public final class DomainInfoResources {
 
@@ -94,10 +94,11 @@ public final class DomainInfoResources {
     private DomainInfoService service;
 
     @GET
-    @ApiOperation("Provide information about all domains. "
+    @Operation(summary = "Provide information about all domains. "
           + "Results sorted lexicographically by domain name.")
     @ApiResponses({
-          @ApiResponse(code = 403, message = "Domain info service only accessible to admin users."),
+          @ApiResponse(responseCode = "403",
+                description = "Domain info service only accessible to admin users."),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getDomains() {
@@ -109,15 +110,16 @@ public final class DomainInfoResources {
     }
 
     @GET
-    @ApiOperation("Provide information about a specific domain.")
+    @Operation(summary = "Provide information about a specific domain.")
     @ApiResponses({
-          @ApiResponse(code = 403, message = "Domain info service only accessible to admin users."),
-          @ApiResponse(code = 404, message = "Domain not found."),
+          @ApiResponse(responseCode = "403",
+                description = "Domain info service only accessible to admin users."),
+          @ApiResponse(responseCode = "404", description = "Domain not found."),
     })
     @Path("/{domain}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getDomain(
-          @ApiParam(value = "The domain name to query", example = "dCacheDomain")
+          @Parameter(description = "The domain name to query", example = "dCacheDomain")
           @PathParam("domain") String domain) {
         Set<String> known = Set.of(service.getAddresses());
         if (!known.contains(domain)) {

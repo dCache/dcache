@@ -59,15 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 
-@ApiModel(description = "A full listing of available time "
+@Schema(description = "A full listing of available time "
       + "series data according to types.")
 public final class BillingDataGrid {
 
-    @ApiModelProperty("Mapping of identifier to entry.")
+    @Schema(description = "Mapping of identifier to entry.")
     private Map<String, BillingDataGridEntry> dataGrid;
 
     public BillingDataGrid() {

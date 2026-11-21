@@ -2,6 +2,7 @@
  * dCache - http://www.dcache.org/
  *
  * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,23 +19,22 @@
  */
 package org.dcache.restful;
 
-import io.swagger.annotations.BasicAuthDefinition;
-import io.swagger.annotations.Contact;
-import io.swagger.annotations.ExternalDocs;
-import io.swagger.annotations.Info;
-import io.swagger.annotations.License;
-import io.swagger.annotations.SecurityDefinition;
-import io.swagger.annotations.SwaggerDefinition;
-import io.swagger.annotations.Tag;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.ext.Provider;
 
 /**
- * This interface exists only to give @SwaggerDefinition something to annotate that swagger will
- * subsequently find.  See:
- * <p>
- * https://github.com/swagger-api/swagger-core/issues/2600
+ * This interface exists only to give @OpenAPIDefinition something to annotate that swagger will
+ * subsequently find, as one of the classes of the REST application.
  */
-@SwaggerDefinition(
+@OpenAPIDefinition(
       info = @Info(
             title = "The dCache REST interface",
             description = "User and administration interaction with dCache",
@@ -48,15 +48,9 @@ import javax.ws.rs.ext.Provider;
                   url = "http://www.apache.org/licenses/LICENSE-2.0"
             )
       ),
-      securityDefinition = @SecurityDefinition(
-            basicAuthDefinitions = {
-                  @BasicAuthDefinition(key = "basicAuth",
-                        description = "Username and password authentication.")
-            }
-      ),
-      consumes = {"application/json"},
-      produces = {"application/json"},
-      externalDocs = @ExternalDocs(value = "Wiki", url = "https://github.com/dCache/dcache/wiki/Restful-API"),
+      servers = @Server(url = "/api/v1"),
+      externalDocs = @ExternalDocumentation(description = "Wiki",
+            url = "https://github.com/dCache/dcache/wiki/Restful-API"),
       tags = {
             @Tag(name = "alarms", description = "The log of internal problems"),
             @Tag(name = "billing", description = "The log of (significant) client activity"),
@@ -80,6 +74,8 @@ import javax.ws.rs.ext.Provider;
             @Tag(name = "transfers", description = "The movement of data between dCache and clients")
       }
 )
+@SecurityScheme(name = "basicAuth", type = SecuritySchemeType.HTTP, scheme = "basic",
+      description = "Username and password authentication.")
 @Provider
 public interface ApiConfig {
 

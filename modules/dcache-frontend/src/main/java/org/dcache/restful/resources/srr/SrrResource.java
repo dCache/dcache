@@ -5,7 +5,7 @@ import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerSubscriber;
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,17 +21,17 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.dcache.restful.util.Responses;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.srr.SrrBuilder;
 import org.dcache.restful.srr.SrrRecord;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
  * RestFul API to  provide files/folders manipulation operations.
  */
-@Api(value = "srr")
+@Tag(name = "srr")
 @Component
 @Path("/srr")
 public class SrrResource {

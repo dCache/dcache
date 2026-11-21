@@ -20,22 +20,26 @@ package org.dcache.restful.resources.auth;
 
 import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.net.URLEncoder;
 import javax.security.auth.Subject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -50,12 +54,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -74,7 +72,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-@Api(value = "auth", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "auth")
+@SecurityRequirement(name = "basicAuth")
 @Path("/auth")
 @Component
 @Produces(MediaType.APPLICATION_JSON)

@@ -61,13 +61,12 @@ package org.dcache.restful.resources.restores;
 
 import diskCacheV111.util.CacheException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -79,7 +78,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -96,7 +94,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "pools", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "pools")
+@SecurityRequirement(name = "basicAuth")
 @Path("/restores")
 public final class RestoreResources {
 
@@ -108,7 +107,7 @@ public final class RestoreResources {
     private boolean unlimitedOperationVisibility;
 
     @GET
-    @ApiOperation("Obtain a (potentially partial) list of restore operations"
+    @Operation(summary = "Obtain a (potentially partial) list of restore operations"
           + " from some snapshot, along with a token that identifies the snapshot.  Note:"
           + " the output to this request represents all the staging operations"
           + " triggered through the pool manager (via read requests through"
@@ -117,11 +116,12 @@ public final class RestoreResources {
           + " appear here.  To see a listing of all stages/restores on a given"
           + " pool, use the API for /pools/{pool}/nearline/queues?type=stage).")
     @ApiResponses({
-          @ApiResponse(code = 403, message = "Restores can only be accessed by admin users."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "403",
+                description = "Restores can only be accessed by admin users."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRestores(@ApiParam("Use the snapshot "
+    public Response getRestores(@Parameter(description = "Use the snapshot "
           + "corresponding to this UUID.  The "
           + "contract with the service is that if the "
           + "parameter value is null, the current snapshot "
@@ -136,25 +136,25 @@ public final class RestoreResources {
           + "need to recall the method without a "
           + "token (refresh).")
     @QueryParam("token") UUID token,
-          @ApiParam("The number of restores to skip.")
+          @Parameter(description = "The number of restores to skip.")
           @QueryParam("offset") Integer offset,
-          @ApiParam("The maximum number of restores to return.")
+          @Parameter(description = "The maximum number of restores to return.")
           @QueryParam("limit") Integer limit,
-          @ApiParam("Select only restores that affect this pnfsId.")
+          @Parameter(description = "Select only restores that affect this pnfsId.")
           @QueryParam("pnfsid") String pnfsid,
-          @ApiParam("Select only restores that affect this path.")
+          @Parameter(description = "Select only restores that affect this path.")
           @QueryParam("path") String path,
-          @ApiParam("Select only restores that affect this owner.")
+          @Parameter(description = "Select only restores that affect this owner.")
           @QueryParam("owner") String owner,
-          @ApiParam("Select only restores that affect this group.")
+          @Parameter(description = "Select only restores that affect this group.")
           @QueryParam("group") String group,
-          @ApiParam("Select only restores triggered by clients from this subnet.")
+          @Parameter(description = "Select only restores triggered by clients from this subnet.")
           @QueryParam("subnet") String subnet,
-          @ApiParam("Select only restores on this pool.")
+          @Parameter(description = "Select only restores on this pool.")
           @QueryParam("pool") String pool,
-          @ApiParam("Select only restores with this status.")
+          @Parameter(description = "Select only restores with this status.")
           @QueryParam("status") String status,
-          @ApiParam("A comma-seperated list of fields on which to sort the results.")
+          @Parameter(description = "A comma-seperated list of fields on which to sort the results.")
           @DefaultValue("pool,started")
           @QueryParam("sort") String sort) {
         try {

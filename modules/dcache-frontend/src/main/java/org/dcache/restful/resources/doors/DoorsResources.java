@@ -1,11 +1,11 @@
 package org.dcache.restful.resources.doors;
 
 import dmg.cells.services.login.LoginBrokerSubscriber;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -23,11 +23,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Path("doors")
-@Api(value = "doors", description = "Operations about doors",
-      authorizations = {
-            @Authorization("basicAuth")
-      }
-)
+@Tag(name = "doors")
+@SecurityRequirement(name = "basicAuth")
 @Produces(MediaType.APPLICATION_JSON)
 public class DoorsResources {
 
@@ -42,9 +39,9 @@ public class DoorsResources {
     }
 
     @GET
-    @ApiOperation(value = "Obtain a list of available dCache doors.")
+    @Operation(summary = "Obtain a list of available dCache doors.")
     @ApiResponses({
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     public Response getDoors() {
         Boolean isAdmin = HttpServletRequests.isAdmin(request);

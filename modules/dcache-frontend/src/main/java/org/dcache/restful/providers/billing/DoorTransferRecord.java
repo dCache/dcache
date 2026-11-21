@@ -60,33 +60,32 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.billing;
 
 import com.google.common.base.Strings;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.dcache.services.billing.db.data.TransferRecord;
 
-@ApiModel(description = "Properties pertinent to reads and writes initiated "
+@Schema(description = "Properties pertinent to reads and writes initiated "
       + "by external clients through a door/protocol.")
 public final class DoorTransferRecord extends DiskTransferRecord {
 
     private static final String MAINFORMAT = "%s (pool %s)(door %s)(%s)(connect %s)(queued %s)(transferred %s)%s %s\n";
     private static final String USERFORMAT = "(fqan %s)(uid %s)(gid %s)(owner %s)";
 
-    @ApiModelProperty("Target (write) or source (read) of the file replica.")
+    @Schema(description = "Target (write) or source (read) of the file replica.")
     private String pool;
 
-    @ApiModelProperty("Door / protocol through which the transfer took place.")
+    @Schema(description = "Door / protocol through which the transfer took place.")
     private String door;
 
-    @ApiModelProperty("User id associated with the transaction.")
+    @Schema(description = "User id associated with the transaction.")
     private Integer mappedUID;
 
-    @ApiModelProperty("Group id associated with the transaction.")
+    @Schema(description = "Group id associated with the transaction.")
     private Integer mappedGID;
 
-    @ApiModelProperty("Owner of the file.")
+    @Schema(description = "Owner of the file.")
     private String owner;
 
-    @ApiModelProperty("Fully qualified attribute name (VOMs), if any, "
+    @Schema(description = "Fully qualified attribute name (VOMs), if any, "
           + "associated with the transaction.")
     private String fqan;
 

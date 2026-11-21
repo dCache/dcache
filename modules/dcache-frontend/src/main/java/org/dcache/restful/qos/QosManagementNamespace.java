@@ -1,6 +1,7 @@
 package org.dcache.restful.qos;
 
 import diskCacheV111.util.CacheException;
+import io.swagger.v3.oas.annotations.Hidden;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  * Query current QoS for a file or change the current QoS
  */
 @Component
+@Hidden
 @Path("/qos-management/namespace")
 public class QosManagementNamespace {
 

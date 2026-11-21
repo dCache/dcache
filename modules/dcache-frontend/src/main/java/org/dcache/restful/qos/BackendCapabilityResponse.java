@@ -1,25 +1,25 @@
 package org.dcache.restful.qos;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(description = "Information about a particular quality of service.")
+@Schema(description = "Information about a particular quality of service.")
 public class BackendCapabilityResponse {
 
-    @ApiModelProperty(value = "The HTTP status code.", required = true)
+    @Schema(description = "The HTTP status code.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String status = "200";
 
-    @ApiModelProperty(value = "The message corresponding to the HTTP status code.",
-          required = true)
+    @Schema(description = "The message corresponding to the HTTP status code.",
+          requiredMode = Schema.RequiredMode.REQUIRED)
     private String message = "successful";
 
-    @ApiModelProperty("Additional information about this quality of service.")
+    @Schema(description = "Additional information about this quality of service.")
     private String qos;
 
-    @ApiModelProperty(value = "The current quality of service.", required = true)
+    @Schema(description = "The current quality of service.",
+          requiredMode = Schema.RequiredMode.REQUIRED)
     private String target;
 
-    @ApiModelProperty("The target quality of service when a file is "
+    @Schema(description = "The target quality of service when a file is "
           + "transitioning between different quality of services.")
     private BackendCapability backendCapability;
 

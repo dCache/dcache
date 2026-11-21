@@ -62,8 +62,7 @@ package org.dcache.restful.providers.billing;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.Date;
 import org.dcache.services.billing.db.data.RecordEntry;
@@ -77,25 +76,25 @@ import org.dcache.services.billing.db.data.RecordEntry;
 
       @JsonSubTypes.Type(value = HSMTransferRecord.class, name = "HSM")}
 )
-@ApiModel(description = "Properties shared by all billing transfer records.")
+@Schema(description = "Properties shared by all billing transfer records.")
 public abstract class BillingTransferRecord implements Serializable {
 
-    @ApiModelProperty("Time of completion for billing transaction.")
+    @Schema(description = "Time of completion for billing transaction.")
     protected Date datestamp;
 
-    @ApiModelProperty("Time in milliseconds the connection lasted.")
+    @Schema(description = "Time in milliseconds the connection lasted.")
     protected Long connectiontime;
 
-    @ApiModelProperty("Time in milliseconds the transfer request was queued.")
+    @Schema(description = "Time in milliseconds the transfer request was queued.")
     protected Long queuedtime;
 
-    @ApiModelProperty("Numerical dCache code for the error.")
+    @Schema(description = "Numerical dCache code for the error.")
     protected Integer errorcode;
 
-    @ApiModelProperty("Associated error message, if any.")
+    @Schema(description = "Associated error message, if any.")
     protected String errormessage;
 
-    @ApiModelProperty("The PNFS-ID of the file in question.")
+    @Schema(description = "The PNFS-ID of the file in question.")
     protected String pnfsid;
 
     protected BillingTransferRecord() {

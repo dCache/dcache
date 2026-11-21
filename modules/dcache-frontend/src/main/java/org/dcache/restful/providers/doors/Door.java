@@ -3,60 +3,59 @@ package org.dcache.restful.providers.doors;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.net.InetAddresses;
 import dmg.cells.services.login.LoginBrokerInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ApiModel(description = "Description about a specific dCache door.")
+@Schema(description = "Description about a specific dCache door.")
 public final class Door {
 
-    @ApiModelProperty("The door cell name. Requires admin role assertion.")
+    @Schema(description = "The door cell name. Requires admin role assertion.")
     private String cellName;
 
-    @ApiModelProperty("The domain name in which the door reside. Requires admin " +
+    @Schema(description = "The domain name in which the door reside. Requires admin " +
           "role assertion.")
     private String domainName;
 
-    @ApiModelProperty("The preferred protocol name.")
+    @Schema(description = "The preferred protocol name.")
     private String protocol;
 
-    @ApiModelProperty("All protocol names supported by this door.")
+    @Schema(description = "All protocol names supported by this door.")
     private List<String> protocols;
 
-    @ApiModelProperty("The version number of the protocol.")
+    @Schema(description = "The version number of the protocol.")
     private String version;
 
-    @ApiModelProperty("The root path of the door.")
+    @Schema(description = "The root path of the door.")
     private String root;
 
-    @ApiModelProperty("The door unique identifier. Requires admin role assertion.")
+    @Schema(description = "The door unique identifier. Requires admin role assertion.")
     private String identifier;
 
-    @ApiModelProperty("List of addresses on which the door is listening for " +
+    @Schema(description = "List of addresses on which the door is listening for " +
           "incoming client connections.")
     private List<InetAddress> addresses;
 
-    @ApiModelProperty("The port number of the door.")
+    @Schema(description = "The port number of the door.")
     private int port;
 
-    @ApiModelProperty("A value between 0 and 1, where 1 indicates maximum load.")
+    @Schema(description = "A value between 0 and 1, where 1 indicates maximum load.")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     private double load;
 
-    @ApiModelProperty("Elapsed time (in milliseconds) since the door was started. " +
+    @Schema(description = "Elapsed time (in milliseconds) since the door was started. " +
           "Requires admin role assertion.")
     private long updateTime;
 
-    @ApiModelProperty("List of tags associated with the door.")
+    @Schema(description = "List of tags associated with the door.")
     private Collection<String> tags;
 
-    @ApiModelProperty("List of read paths.")
+    @Schema(description = "List of read paths.")
     private Collection<String> readPaths;
 
-    @ApiModelProperty("List of write paths.")
+    @Schema(description = "List of write paths.")
     private Collection<String> writePaths;
 
     public Door(Boolean isAdmin, LoginBrokerInfo info) {

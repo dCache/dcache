@@ -27,15 +27,14 @@ import static org.dcache.util.Exceptions.genericCheck;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import io.swagger.annotations.ResponseHeader;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -66,11 +65,11 @@ import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseEventSink;
 import org.dcache.restful.events.Channel;
 import org.dcache.restful.events.EventStreamRepository;
-import org.dcache.restful.util.Responses;
 import org.dcache.restful.events.EventStreamRepository.EventStreamMetadata;
 import org.dcache.restful.events.Registrar;
 import org.dcache.restful.events.SubscriptionResult;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,69 +81,70 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Path("events")
-@Api(value = "events", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "events")
+@SecurityRequirement(name = "basicAuth")
 @Produces(MediaType.APPLICATION_JSON)
 public class EventResources {
 
-    @ApiModel(description = "Metadata supplied when requesting a new channel")
+    @Schema(description = "Metadata supplied when requesting a new channel")
     public static class NewChannelMetadata {
 
-        @ApiModelProperty("An identifier the describes the client.  May be "
+        @Schema(description = "An identifier the describes the client.  May be "
               + "used to rediscover the channel.  An empty string is "
               + "equivalent to not supplying a channel-id")
         @JsonProperty("client-id")
         private String clientId;
     }
 
-    @ApiModel(description = "Information on closing channels if disconnected.")
+    @Schema(description = "Information on closing channels if disconnected.")
     public class DisconnectLifetimeMetadata {
 
-        @ApiModelProperty(value = "The minimum duration a client is disconnected "
+        @Schema(description = "The minimum duration a client is disconnected "
               + "when a channel is garbage collected.  The value is in seconds.")
         public int getMinimum() {
             return MINIMUM_DISCONNECT_TIMEOUT;
         }
 
-        @ApiModelProperty("The maximum duration a client is disconnected when a "
+        @Schema(description = "The maximum duration a client is disconnected when a "
               + "channel is garbage collected.  The value is in seconds.")
         public long getMaximum() {
             return maximumDisconnectTimeout;
         }
 
-        @ApiModelProperty("The default duration a client is disconnected when a "
+        @Schema(description = "The default duration a client is disconnected when a "
               + "channel is garbage collected.  The value is in seconds.")
         public long getDefault() {
             return TimeUnit.MILLISECONDS.toSeconds(registrar.getDefaultDisconnectTimeout());
         }
     }
 
-    @ApiModel(description = "Information about channels.")
+    @Schema(description = "Information about channels.")
     public class ChannelsMetadata {
 
-        @ApiModelProperty("The maximum number of concurrent channel "
+        @Schema(description = "The maximum number of concurrent channel "
               + "allowed for any user.  Attempts to exceed this limit result "
               + "in the request failing with a `429` status code.")
         public int getMaximumPerUser() {
             return registrar.getMaximumChannelsPerUser();
         }
 
-        @ApiModelProperty("The policy about automatic closing channels that are "
+        @Schema(description = "The policy about automatic closing channels that are "
               + "not connected.  All values are in seconds.")
         public final DisconnectLifetimeMetadata lifetimeWhenDisconnected
               = new DisconnectLifetimeMetadata();
     }
 
-    @ApiModel(description = "Information about the event support.")
+    @Schema(description = "Information about the event support.")
     public class ServiceMetadata {
 
-        @ApiModelProperty("Information about channels.")
+        @Schema(description = "Information about channels.")
         public final ChannelsMetadata channels = new ChannelsMetadata();
     }
 
-    @ApiModel(description = "Subscription independent metadata about a channel")
+    @Schema(description = "Subscription independent metadata about a channel")
     public class ChannelMetadata {
 
-        @ApiModelProperty("The current disconnect timeout, in seconds.")
+        @Schema(description = "The current disconnect timeout, in seconds.")
         public final long timeout;
 
         public ChannelMetadata(Channel channel) {
@@ -152,10 +152,10 @@ public class EventResources {
         }
     }
 
-    @ApiModel(description = "")
+    @Schema(description = "")
     public static class ChannelModification {
 
-        @ApiModelProperty("The new timeout, in seconds.")
+        @Schema(description = "The new timeout, in seconds.")
         public long timeout;
     }
 
@@ -196,9 +196,9 @@ public class EventResources {
     }
 
     @GET
-    @ApiOperation(value = "Obtain general information about event support in "
+    @Operation(summary = "Obtain general information about event support in "
           + "dCache.",
-          notes = "This query returns information that applies independent of "
+          description = "This query returns information that applies independent of "
                 + "a specific event-type, and independent of a specific "
                 + "channel.")
     public Response serviceMetadata() {
@@ -207,16 +207,16 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation(value = "Obtain a list of the available event types.",
-          notes = "Event types are course-grain identifiers that group "
+    @Operation(summary = "Obtain a list of the available event types.",
+          description = "Event types are course-grain identifiers that group "
                 + "together broadly similar events.  These identifiers are "
                 + "used for introspection (finding out metadata about these "
                 + "events), adding or modifying a channel's "
                 + "subscription.  The event-type identifiers are also used "
                 + "as the 'event' fields in SSE messages.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
     })
     @Path("/eventTypes")
     public Response getEventTypes() {
@@ -226,18 +226,19 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation(value = "Obtain non-schema information about a specific event type.",
-          notes = "The information returns general information about a specific "
+    @Operation(summary = "Obtain non-schema information about a specific event type.",
+          description = "The information returns general information about a specific "
                 + "event type.  The JSON Schema that describes selectors and "
                 + "events is provided in seperate queries.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 404, message = "No such event type"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "404", description = "No such event type"),
     })
     @Path("/eventTypes/{type}")
-    public Response getEventType(@ApiParam("The specific event type to be described.")
-    @NotNull @PathParam("type") String type) {
+    public Response getEventType(
+          @Parameter(description = "The specific event type to be described.")
+          @NotNull @PathParam("type") String type) {
         checkAuthenticated();
         EventStreamMetadata result = repository.metadataForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
@@ -246,17 +247,18 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation(value = "Obtain the JSON schema for this event type's selectors.",
-          notes = "The returned information is a JSON Schema that describes "
+    @Operation(summary = "Obtain the JSON schema for this event type's selectors.",
+          description = "The returned information is a JSON Schema that describes "
                 + "the format and semantics of the selector.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 404, message = "No such event type"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "404", description = "No such event type"),
     })
     @Path("/eventTypes/{type}/selector")
-    public Response getSelectorSchema(@ApiParam("The specific event type to be described.")
-    @NotNull @PathParam("type") String type) {
+    public Response getSelectorSchema(
+          @Parameter(description = "The specific event type to be described.")
+          @NotNull @PathParam("type") String type) {
         checkAuthenticated();
         ObjectNode result = repository.selectorSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
@@ -264,17 +266,18 @@ public class EventResources {
     }
 
     @GET
-    @ApiOperation(value = "Obtain the JSON schema for events of this event type.",
-          notes = "The returned information is a JSON Schema that describes "
+    @Operation(summary = "Obtain the JSON schema for events of this event type.",
+          description = "The returned information is a JSON Schema that describes "
                 + "the format and semantics of events.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 404, message = "No such event type"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "404", description = "No such event type"),
     })
     @Path("/eventTypes/{type}/event")
-    public Response getEventSchema(@ApiParam("The specific event type to be described.")
-    @NotNull @PathParam("type") String type) {
+    public Response getEventSchema(
+          @Parameter(description = "The specific event type to be described.")
+          @NotNull @PathParam("type") String type) {
         checkAuthenticated();
         ObjectNode result = repository.eventSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
@@ -282,8 +285,8 @@ public class EventResources {
     }
 
     @GET
-    @ApiOperation(value = "Obtain a list of channels.",
-          notes = "Provide a list of channel URLs that are the currently active "
+    @Operation(summary = "Obtain a list of channels.",
+          description = "Provide a list of channel URLs that are the currently active "
                 + "for this user.  Channels that have been close (either "
                 + "manually by the client or automatically through being "
                 + "disconnected for too long) are not shown."
@@ -296,12 +299,12 @@ public class EventResources {
                 + "query-parameter is supplied then all channels are "
                 + "returned.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
     })
     @Path("/channels")
     public Response getChannels(@Context UriInfo uriInfo,
-          @ApiParam("Limit channels by client-id")
+          @Parameter(description = "Limit channels by client-id")
           @QueryParam("client-id") String clientId) {
         checkAuthenticated();
 
@@ -320,8 +323,8 @@ public class EventResources {
 
 
     @POST
-    @ApiOperation(value = "Request a new channel.",
-          notes = "A channel is a URL that allows a client to receive "
+    @Operation(summary = "Request a new channel.",
+          description = "A channel is a URL that allows a client to receive "
                 + "events. Each channel is owned by a dCache user and "
                 + "may only be used by that user. Each user is allowed only "
                 + "a finite number of channels."
@@ -346,12 +349,12 @@ public class EventResources {
                 + "allows a client to reuse an existing channel without "
                 + "storing that channel's URL.")
     @ApiResponses({
-          @ApiResponse(code = 201, message = "Created", responseHeaders = {
-                @ResponseHeader(name = "Location", response = URI.class,
+          @ApiResponse(responseCode = "201", description = "Created", headers = {
+                @Header(name = "Location", schema = @Schema(implementation = URI.class),
                       description = "The URL of the new channel.")
           }),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 429, message = "Too Many Channels"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "429", description = "Too Many Channels"),
     })
     @Path("/channels")
     public Response register(@Context UriInfo uriInfo,
@@ -369,8 +372,8 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation(value = "Receive events for this channel.",
-          notes = "This method allows a client to receive events in "
+    @Operation(summary = "Receive events for this channel.",
+          description = "This method allows a client to receive events in "
                 + "real-time, following the Server Sent Events (SSE) "
                 + "standard. Any standard-compliant SSE client should be "
                 + "able to use this endpoint to receive events."
@@ -393,16 +396,16 @@ public class EventResources {
                 + "If there is a request consuming events and a second "
                 + "request is made then the first request is terminated.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No such channel"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No such channel"),
     })
     @Path("/channels/{id}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
-    public void events(@ApiParam("The ID of the channel.")
+    public void events(@Parameter(description = "The ID of the channel.")
     @NotNull @PathParam("id") String id,
-          @ApiParam("The ID of the last event to be processed.   If supplied "
+          @Parameter(description = "The ID of the last event to be processed.   If supplied "
                 + "and this event is in the event cache then any subsequent "
                 + "events are sent to the client.")
           @HeaderParam("Last-Event-ID") String lastId,
@@ -413,12 +416,12 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation("Obtain metadata about a channel.")
+    @Operation(summary = "Obtain metadata about a channel.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No such channel"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No such channel"),
     })
     @Path("/channels/{id}")
     public Response channelMetadata(@NotNull @PathParam("id") String id) {
@@ -427,16 +430,16 @@ public class EventResources {
 
 
     @PATCH
-    @ApiOperation(value = "Modify a channel.",
-          notes = "This operation allows changes to a channel that are not "
+    @Operation(summary = "Modify a channel.",
+          description = "This operation allows changes to a channel that are not "
                 + "related to subscriptions.  Currently, this is modifying "
                 + "the disconnection timeout.")
     @ApiResponses({
-          @ApiResponse(code = 204, message = "No Content"),
-          @ApiResponse(code = 400, message = "Bad request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No found"),
+          @ApiResponse(responseCode = "204", description = "No Content"),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No found"),
     })
     @Path("/channels/{id}")
     public void modify(@NotNull @PathParam("id") String id,
@@ -452,18 +455,18 @@ public class EventResources {
 
 
     @DELETE
-    @ApiOperation(value = "Cancel a channel.",
-          notes = "This operation cancels a channel.  All subscriptions are "
+    @Operation(summary = "Cancel a channel.",
+          description = "This operation cancels a channel.  All subscriptions are "
                 + "automatically cancelled.  Any connection that is "
                 + "receiving events is closed."
                 + "\n"
                 + "Once cancelled, any subsequent operations involving the "
                 + "channel will fail.")
     @ApiResponses({
-          @ApiResponse(code = 204, message = "No Content"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No such channel"),
+          @ApiResponse(responseCode = "204", description = "No Content"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No such channel"),
     })
     @Path("/channels/{id}")
     public void deleteChannel(@NotNull @PathParam("id") String id) throws IOException {
@@ -472,12 +475,12 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation("Obtain list a channel's subscriptions.")
+    @Operation(summary = "Obtain list a channel's subscriptions.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No such channel"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No such channel"),
     })
     @Path("/channels/{id}/subscriptions")
     public Response channelSubscriptions(
@@ -491,19 +494,19 @@ public class EventResources {
 
 
     @POST
-    @ApiOperation(value = "Subscribe to events.",
-          notes = "Create a new subscription to some events.  The selector "
+    @Operation(summary = "Subscribe to events.",
+          description = "Create a new subscription to some events.  The selector "
                 + "allows the client to describe which events are of "
                 + "interest, in effect, filtering which events are received.  "
                 + "The format of valid selectors is described in the event "
                 + "type metadata, using JSON Schema.")
     @ApiResponses({
-          @ApiResponse(code = 201, message = "Created", responseHeaders = {
-                @ResponseHeader(name = "Location", response = URI.class,
+          @ApiResponse(responseCode = "201", description = "Created", headers = {
+                @Header(name = "Location", schema = @Schema(implementation = URI.class),
                       description = "The absolute URL of the new subscription.")
           }),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Access denied"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
     })
     @Path("/channels/{id}/subscriptions/{type}")
     public Response subscribe(
@@ -558,12 +561,12 @@ public class EventResources {
 
 
     @GET
-    @ApiOperation("Return the selector of this subscription.")
+    @Operation(summary = "Return the selector of this subscription.")
     @ApiResponses({
-          @ApiResponse(code = 200, message = "OK"),
-          @ApiResponse(code = 401, message = "anonymous access not allowed"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "No such channel"),
+          @ApiResponse(responseCode = "200", description = "OK"),
+          @ApiResponse(responseCode = "401", description = "anonymous access not allowed"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "No such channel"),
     })
     @Path("/channels/{channel_id}/subscriptions/{type}/{subscription_id}")
     public Response channelSubscription(
@@ -579,17 +582,17 @@ public class EventResources {
 
 
     @DELETE
-    @ApiOperation(value = "Cancel a subscription.",
-          notes = "This operation cancels a subscription.  After returning, no "
+    @Operation(summary = "Cancel a subscription.",
+          description = "This operation cancels a subscription.  After returning, no "
                 + "further events are sent from this subscription.  The "
                 + "subscription is no longer listed when querying the list "
                 + "of all subscriptions, and attempts to fetch metadata "
                 + "about this subscription return a 404 response.")
     @ApiResponses({
-          @ApiResponse(code = 204, message = "No Content"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Access denied"),
-          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(responseCode = "204", description = "No Content"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Access denied"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
     })
     @Path("/channels/{channel_id}/subscriptions/{type}/{subscription_id}")
     public void deleteSubscription(@NotNull @PathParam("channel_id") String channelId,

@@ -64,12 +64,12 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -104,7 +104,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "namespace")
+@SecurityRequirement(name = "basicAuth")
 @Path("/qos-policy")
 public class QosPolicyResource {
 
@@ -126,13 +127,14 @@ public class QosPolicyResource {
     private CellStub qosEngine;
 
     @GET
-    @ApiOperation(value = "Retrieve the current count of files in the namespace by policy and state.")
+    @Operation(summary = "Retrieve the current count of files in the namespace by policy and "
+          + "state.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("stats")
     @Produces(MediaType.APPLICATION_JSON)
@@ -155,18 +157,19 @@ public class QosPolicyResource {
     }
 
     @GET
-    @ApiOperation(value = "Retrieve the QoSPolicy name and status for this file pnfsid.")
+    @Operation(summary = "Retrieve the QoSPolicy name and status for this file pnfsid.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("id/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPolicyInfoForPnfsId(@ApiParam("The pnfsid of the file for which to retrieve policy info.")
-    @PathParam("id")String id) {
+    public Response getPolicyInfoForPnfsId(
+          @Parameter(description = "The pnfsid of the file for which to retrieve policy info.")
+          @PathParam("id")String id) {
         FileQoSPolicyInfoMessage message = new FileQoSPolicyInfoMessage(new PnfsId(id));
 
         try {
@@ -185,18 +188,19 @@ public class QosPolicyResource {
     }
 
     @GET
-    @ApiOperation(value = "Retrieve the QoSPolicy name and status for this file path.")
+    @Operation(summary = "Retrieve the QoSPolicy name and status for this file path.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("path/{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPolicyInfoForPath(@ApiParam("The path of the file for which to retrieve policy info.")
-    @PathParam("path")String requestPath) {
+    public Response getPolicyInfoForPath(
+          @Parameter(description = "The path of the file for which to retrieve policy info.")
+          @PathParam("path")String requestPath) {
         FileQoSPolicyInfoMessage message;
         PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
         FsPath path;

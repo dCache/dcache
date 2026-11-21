@@ -18,6 +18,7 @@
  */
 package org.dcache.restful;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -31,6 +32,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Base64;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -57,6 +59,9 @@ public class FrontendDoorContextTest {
               Map.of("frontend.net.port", "0",
                     "frontend.net.listen", "127.0.0.1",
                     "frontend.authn.protocol", "http",
+                    // user 'anonymous' reaches the REST API without gPlazma
+                    "frontend.authn.basic", "true",
+                    "frontend.authz.anonymous-operations", "READONLY",
                     "dcache.paths.swagger-ui.jar", swaggerUi[0],
                     "dcache.paths.swagger-ui.jar.internal", swaggerUi[1]),
               "macaroons-true");
@@ -112,6 +117,20 @@ public class FrontendDoorContextTest {
         assertThat(response.statusCode(), is(200));
         assertThat(response.headers().firstValue("Content-Type").orElse(""),
               startsWith("text/css"));
+    }
+
+    @Test
+    public void shouldServeOpenApiDescription() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/api/v1/openapi.json"))
+                    .header("Authorization", "Basic " + Base64.getEncoder()
+                          .encodeToString("anonymous:none".getBytes(UTF_8)))
+                    .GET().build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), containsString("\"openapi\""));
+        assertThat(response.body(), containsString("\"/cells/{address}\""));
     }
 
     @Test

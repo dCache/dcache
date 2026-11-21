@@ -253,15 +253,12 @@ public class ServletContextFactoryBeanTest {
     }
 
     @Test
-    public void shouldInitialiseServletsWithoutPathSpecsAfterListeners() throws Exception {
+    public void shouldNotifyListenersBeforeServletsAreInitialised() throws Exception {
         start("<bean id='context' class='" + FACTORY + "'>"
               + "  <property name='eventListeners'><list>"
               + "    <bean class='" + AttributeListener.class.getName() + "'/>"
               + "  </list></property>"
               + "  <property name='servlets'><list>"
-              + "    <bean class='" + SERVLET + "'>"
-              + "      <property name='servlet'><bean class='" + ConfiguringServlet.class.getName() + "'/></property>"
-              + "    </bean>"
               + "    <bean class='" + SERVLET + "'>"
               + "      <property name='servlet'><bean class='" + AttributeServlet.class.getName() + "'/></property>"
               + "      <property name='pathSpecs'><list><value>/</value></list></property>"
@@ -269,7 +266,7 @@ public class ServletContextFactoryBeanTest {
               + "  </list></property>"
               + "</bean>");
 
-        assertThat(get("/any").body(), is("listener servlet"));
+        assertThat(get("/any").body(), is("listener"));
     }
 
     @Test
@@ -374,27 +371,21 @@ public class ServletContextFactoryBeanTest {
     }
 
     /**
-     * Sets the context attribute {@code servlet} from the attribute {@code listener} when
-     * initialised.
+     * Writes the context attribute {@code listener} as it was when the servlet was initialised.
      */
-    public static class ConfiguringServlet extends HttpServlet {
+    public static class AttributeServlet extends HttpServlet {
+
+        private Object listener;
 
         @Override
         public void init() {
-            getServletContext().setAttribute("servlet",
-                  getServletContext().getAttribute("listener") + " servlet");
+            listener = getServletContext().getAttribute("listener");
         }
-    }
-
-    /**
-     * Writes the context attribute {@code servlet}.
-     */
-    public static class AttributeServlet extends HttpServlet {
 
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
               throws IOException {
-            response.getWriter().print(getServletContext().getAttribute("servlet"));
+            response.getWriter().print(listener);
         }
     }
 }

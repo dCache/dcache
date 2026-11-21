@@ -5,8 +5,7 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,115 +24,117 @@ import org.dcache.vehicles.FileAttributes;
  * FileResources.getFileAttributes will throw an error. Therefore, we are forced to keep
  * JsonFileAttributes to  bypass  "quards" and set manually file attributes.
  */
-@ApiModel(description = "Specifies the attributes of a given file.")
+@Schema(description = "Specifies the attributes of a given file.")
 public class JsonFileAttributes {
 
-    @ApiModelProperty("NFSv4 Access control list.")
+    @Schema(description = "NFSv4 Access control list.")
     private ACL _acl;
 
-    @ApiModelProperty("File size in bytes.")
+    @Schema(description = "File size in bytes.")
     private Long _size;
 
-    @ApiModelProperty("File's attribute change timestamp, in unix-time.")
+    @Schema(description = "File's attribute change timestamp, in unix-time.")
     private Long _ctime;
 
-    @ApiModelProperty("File's creation timestamp, in unix-time.")
+    @Schema(description = "File's creation timestamp, in unix-time.")
     private Long _creationTime;
 
-    @ApiModelProperty("File's last access timestamp, in unix-time.")
+    @Schema(description = "File's last access timestamp, in unix-time.")
     private Long _atime;
 
-    @ApiModelProperty("File's last modification timestamp, in unix-time.")
+    @Schema(description = "File's last modification timestamp, in unix-time.")
     private Long _mtime;
 
-    @ApiModelProperty("File's known checksums.")
+    @Schema(description = "File's known checksums.")
     private Set<Checksum> _checksums;
 
-    @ApiModelProperty("File owner's id.")
+    @Schema(description = "File owner's id.")
     private Integer _owner;
 
-    @ApiModelProperty("Files group id.")
+    @Schema(description = "Files group id.")
     private Integer _group;
 
-    @ApiModelProperty("POSIX.1 file mode.")
+    @Schema(description = "POSIX.1 file mode.")
     private Integer _mode;
 
-    @ApiModelProperty(value = "File's access latency.", allowableValues = "ONLINE, NEARLINE")
+    @Schema(description = "File's access latency.", allowableValues = {"ONLINE", "NEARLINE"})
     private AccessLatency _accessLatency;
 
-    @ApiModelProperty(value = "File's retention policy.", allowableValues = "CUSTODIAL, REPLICA, OUTPUT")
+    @Schema(description = "File's retention policy.",
+          allowableValues = {"CUSTODIAL", "REPLICA", "OUTPUT"})
     private RetentionPolicy _retentionPolicy;
 
-    @ApiModelProperty(value = "File type.", allowableValues = "REG, DIR, LINK, SPECIAL")
+    @Schema(description = "File type.", allowableValues = {"REG", "DIR", "LINK", "SPECIAL"})
     private FileType _fileType;
 
-    @ApiModelProperty("File's (disk) locations within dCache.")
+    @Schema(description = "File's (disk) locations within dCache.")
     private Collection<String> _locations;
 
-    @ApiModelProperty("Key value map of flags associated with the file.")
+    @Schema(description = "Key value map of flags associated with the file.")
     private Map<String, String> _flags;
 
-    @ApiModelProperty("Number of links.")
+    @Schema(description = "Number of links.")
     private Integer _nlink;
 
-    @ApiModelProperty("The PNFS-ID of the file (unique id).")
+    @Schema(description = "The PNFS-ID of the file (unique id).")
     private PnfsId _pnfsId;
 
-    @ApiModelProperty("The storage info of the file.")
+    @Schema(description = "The storage info of the file.")
     private StorageInfo _storageInfo;
 
-    @ApiModelProperty("List of storage (tape) uris.")
+    @Schema(description = "List of storage (tape) uris.")
     private List<URI> _suris;
 
-    @ApiModelProperty("Storage class of the file.")
+    @Schema(description = "Storage class of the file.")
     private String _storageClass;
 
-    @ApiModelProperty("The HSM (hierarchical storage manager) storing the file.")
+    @Schema(description = "The HSM (hierarchical storage manager) storing the file.")
     private String _hsm;
 
-    @ApiModelProperty("Cache class of the file.")
+    @Schema(description = "Cache class of the file.")
     private String _cacheClass;
 
-    @ApiModelProperty("Name of the file.")
+    @Schema(description = "Name of the file.")
     private String fileName;
 
-    @ApiModelProperty("MIME type of the file.")
+    @Schema(description = "MIME type of the file.")
     private String fileMimeType;
 
-    @ApiModelProperty("Current parent directory of a file.")
+    @Schema(description = "Current parent directory of a file.")
     private String sourcePath;
 
-    @ApiModelProperty("New directory of a file, where the file will be moved.")
+    @Schema(description = "New directory of a file, where the file will be moved.")
     private String newPath;
 
-    @ApiModelProperty("File path.")
+    @Schema(description = "File path.")
     private String path;
 
-    @ApiModelProperty("dCache file attributes for children, if this file is a directory.")
+    @Schema(description = "dCache file attributes for children, if this file is a directory.")
     private List<JsonFileAttributes> children;
 
-    @ApiModelProperty("dCache file attributes of the file.")
+    @Schema(description = "dCache file attributes of the file.")
     public FileAttributes attributes;
 
-    @ApiModelProperty(value = "Current file availability.", allowableValues = "ONLINE, NEARLINE, ONLINE_AND_NEARLINE")
+    @Schema(description = "Current file availability.",
+          allowableValues = {"ONLINE", "NEARLINE", "ONLINE_AND_NEARLINE"})
     public FileLocality fileLocality;
 
-    @ApiModelProperty("Current QoS for this file.")
+    @Schema(description = "Current QoS for this file.")
     public String currentQos;
 
-    @ApiModelProperty("The target QoS if the file is changing QoS.")
+    @Schema(description = "The target QoS if the file is changing QoS.")
     public String targetQos;
 
-    @ApiModelProperty("File's extended attributes.")
+    @Schema(description = "File's extended attributes.")
     private Map<String, String> xattr;
 
-    @ApiModelProperty("File's labels.")
+    @Schema(description = "File's labels.")
     private Set<String> labels;
 
-    @ApiModelProperty("File's QoS policy.")
+    @Schema(description = "File's QoS policy.")
     private String qosPolicy;
 
-    @ApiModelProperty("File's current QoS policy state index.")
+    @Schema(description = "File's current QoS policy state index.")
     private Integer qosState;
 
 

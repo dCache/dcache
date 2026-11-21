@@ -62,13 +62,12 @@ package org.dcache.restful.resources.transfers;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -79,7 +78,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
@@ -94,7 +92,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "transfers", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "transfers")
+@SecurityRequirement(name = "basicAuth")
 @Path("/transfers")
 public final class TransferResources {
 
@@ -105,15 +104,16 @@ public final class TransferResources {
     private boolean unlimitedOperationVisibility;
 
     @GET
-    @ApiOperation("Provide a list of all client-initiated transfers that are "
+    @Operation(summary = "Provide a list of all client-initiated transfers that are "
           + "either queued or currently running.  Internal (pool-to-pool) "
           + "transfers are excluded.")
     @ApiResponses({
-          @ApiResponse(code = 403, message = "User subject must contain uid to access transfers."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "403",
+                description = "User subject must contain uid to access transfers."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getTransfers(@ApiParam("Use the snapshot "
+    public Response getTransfers(@Parameter(description = "Use the snapshot "
           + "corresponding to this UUID.  The "
           + "contract with the service is that if the "
           + "parameter value is null, the current snapshot "
@@ -128,33 +128,34 @@ public final class TransferResources {
           + "need to recall the method without a "
           + "token (refresh).")
     @QueryParam("token") UUID token,
-          @ApiParam("The number of items to skip.")
+          @Parameter(description = "The number of items to skip.")
           @QueryParam("offset") Integer offset,
-          @ApiParam("The maximum number items to return.")
+          @Parameter(description = "The maximum number items to return.")
           @QueryParam("limit") Integer limit,
-          @ApiParam("Select transfers in this state (NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE)")
+          @Parameter(description = "Select transfers in this state (NOTFOUND, STAGING, QUEUED, "
+                + "RUNNING, CANCELED, DONE)")
           @QueryParam("state") String state,
-          @ApiParam("Select transfers initiated through this door.")
+          @Parameter(description = "Select transfers initiated through this door.")
           @QueryParam("door") String door,
-          @ApiParam("Select transfers initiated through a door in this domain.")
+          @Parameter(description = "Select transfers initiated through a door in this domain.")
           @QueryParam("domain") String domain,
-          @ApiParam("Select transfers using this protocol.")
+          @Parameter(description = "Select transfers using this protocol.")
           @QueryParam("prot") String protocol,
-          @ApiParam("Select transfers initiated by this user.")
+          @Parameter(description = "Select transfers initiated by this user.")
           @QueryParam("uid") String uid,
-          @ApiParam("Select transfers initiated by a member of this group.")
+          @Parameter(description = "Select transfers initiated by a member of this group.")
           @QueryParam("gid") String gid,
-          @ApiParam("Select transfers initiated by a member of this vomsgroup.")
+          @Parameter(description = "Select transfers initiated by a member of this vomsgroup.")
           @QueryParam("vomsgroup") String vomsgroup,
-          @ApiParam("Select transfers involving this path.")
+          @Parameter(description = "Select transfers involving this path.")
           @QueryParam("path") String path,
-          @ApiParam("Select transfers involving this pnfsid.")
+          @Parameter(description = "Select transfers involving this pnfsid.")
           @QueryParam("pnfsid") String pnfsid,
-          @ApiParam("Select transfers involving this pool.")
+          @Parameter(description = "Select transfers involving this pool.")
           @QueryParam("pool") String pool,
-          @ApiParam("Select transfers involving this client.")
+          @Parameter(description = "Select transfers involving this client.")
           @QueryParam("client") String client,
-          @ApiParam("A comma-seperated list of fields to sort the responses.")
+          @Parameter(description = "A comma-seperated list of fields to sort the responses.")
           @DefaultValue("door,waiting")
           @QueryParam("sort") String sort) {
         try {

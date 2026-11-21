@@ -1,7 +1,8 @@
 package org.dcache.restful;
 
-import io.swagger.jaxrs.listing.ApiListingResource;
-import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.JaxrsApplicationScanner;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import org.dcache.restful.interceptors.LoggingInterceptor;
 import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
@@ -13,8 +14,8 @@ import org.dcache.restful.resources.bulk.BulkResources;
 import org.dcache.restful.resources.cells.CellInfoResources;
 import org.dcache.restful.resources.domains.DomainInfoResources;
 import org.dcache.restful.resources.doors.DoorsResources;
-import org.dcache.restful.resources.identity.UserSession;
 import org.dcache.restful.resources.identity.UserResource;
+import org.dcache.restful.resources.identity.UserSession;
 import org.dcache.restful.resources.labels.LabelsResources;
 import org.dcache.restful.resources.migration.MigrationResources;
 import org.dcache.restful.resources.namespace.FileResources;
@@ -40,6 +41,17 @@ import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 public class DcacheRestApplication extends ResourceConfig {
+
+    /**
+     * Returns the configuration of the OpenAPI description, served as {@code openapi.json}: it
+     * describes the classes of this application only. The returned entity is documented as the
+     * 200 response, which an operation that lists other responses must list too.
+     */
+    public static SwaggerConfiguration openApiConfiguration() {
+        return new SwaggerConfiguration()
+              .scannerClass(JaxrsApplicationScanner.class.getName())
+              .defaultResponseCode("200");
+    }
 
     public DcacheRestApplication() {
         packages("org.dcache.restful",
@@ -74,8 +86,7 @@ public class DcacheRestApplication extends ResourceConfig {
         register(ArchiveInfoResources.class);
         register(ReleaseResources.class);
         register(StageResources.class);
-        register(ApiListingResource.class);
-        register(SwaggerSerializers.class);
+        register(new OpenApiResource().openApiConfiguration(openApiConfiguration()));
         register(EventResources.class);
         register(MigrationResources.class);
 

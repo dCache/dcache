@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -100,7 +100,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "poolmanager")
+@SecurityRequirement(name = "basicAuth")
 @Path("/partitions")
 public final class PartitionResources {
 
@@ -113,7 +114,7 @@ public final class PartitionResources {
 
 
     @GET
-    @ApiOperation("Get information about all partitions."
+    @Operation(summary = "Get information about all partitions."
           + " Results sorted lexicographically by partition name.")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPartitions() {
@@ -126,21 +127,22 @@ public final class PartitionResources {
     }
 
     @PATCH
-    @ApiOperation("Change a partition's parameters via 'pm set'. Requires admin role. "
+    @Operation(summary = "Change a partition's parameters via 'pm set'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Partition command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Partition command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{partition}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updatePartition(
-            @ApiParam(value = "The partition to be changed.", required = true)
+            @Parameter(description = "The partition to be changed.", required = true)
             @PathParam("partition") String partition,
-            @ApiParam(value = "JSON object mapping parameter names to their new values, e.g. "
+            @Parameter(description = "JSON object mapping parameter names to their new values, e.g. "
                     + "{\"cpucostfactor\": \"0.5\", \"p2p-allowed\": \"no\"}. The parameters "
                     + "are those listed in the partition's properties. A value of null resets "
                     + "the parameter to its inherited or default value. Only parameters "

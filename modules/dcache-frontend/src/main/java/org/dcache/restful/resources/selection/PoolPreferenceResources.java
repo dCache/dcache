@@ -63,12 +63,13 @@ import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -97,7 +98,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "poolmanager")
+@SecurityRequirement(name = "basicAuth")
 @Path("/pool-preferences")
 public final class PoolPreferenceResources {
 
@@ -108,36 +110,37 @@ public final class PoolPreferenceResources {
     private CellStub poolManager;
 
     @GET
-    @ApiOperation("Describe the pools selected by a particular request.")
+    @Operation(summary = "Describe the pools selected by a particular request.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response match(
-          @ApiParam(value = "The I/O direction.", allowableValues = "READ,CACHE,WRITE,P2P")
+          @Parameter(description = "The I/O direction.",
+                schema = @Schema(allowableValues = {"READ", "CACHE", "WRITE", "P2P"}))
           @DefaultValue("READ")
           @QueryParam("ioDirection") String ioDirection,
-          @ApiParam("The name of the storage class.")
+          @Parameter(description = "The name of the storage class.")
           @QueryParam("storageClass") String storageClass,
-          @ApiParam("The name of the hsm type.")
+          @Parameter(description = "The name of the hsm type.")
           @QueryParam("hsm") String hsm,
-          @ApiParam("The name of the cache class.")
+          @Parameter(description = "The name of the cache class.")
           @DefaultValue("")
           @QueryParam("cacheClass") String cacheClass,
-          @ApiParam("The link group unit.")
+          @Parameter(description = "The link group unit.")
           @DefaultValue("")
           @QueryParam("linkGroup") String linkGroup,
-          @ApiParam("The pnfsId of a file.")
+          @Parameter(description = "The pnfsId of a file.")
           @DefaultValue("")
           @QueryParam("pnfsId") String pnfsId,
-          @ApiParam("The path of a file.")
+          @Parameter(description = "The path of a file.")
           @DefaultValue("")
           @QueryParam("path") String path,
-          @ApiParam("The name of the net unit.")
+          @Parameter(description = "The name of the net unit.")
           @DefaultValue("*")
           @QueryParam("net") String net,
-          @ApiParam("The name of the protocol unit.")
+          @Parameter(description = "The name of the protocol unit.")
           @DefaultValue("*")
           @QueryParam("protocol") String protocol) {
         try {

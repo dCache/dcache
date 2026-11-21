@@ -63,21 +63,20 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ApiModel(description = "Information about a specific poolgroup.")
+@Schema(description = "Information about a specific poolgroup.")
 public final class PoolGroup extends SelectionTypeWithLinks {
 
     private static final long serialVersionUID = -3481667048585522521L;
 
-    @ApiModelProperty("The pools that are a member of this poolgroup.")
+    @Schema(description = "The pools that are a member of this poolgroup.")
     private final List<String> pools;
 
-    @ApiModelProperty("The Nested poolGroups that are a member of this poolgroup.")
+    @Schema(description = "The Nested poolGroups that are a member of this poolgroup.")
     private final List<String> nestedPoolGroups;
 
     public PoolGroup() {

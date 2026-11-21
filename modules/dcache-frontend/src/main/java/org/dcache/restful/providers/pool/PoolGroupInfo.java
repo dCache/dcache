@@ -61,8 +61,7 @@ package org.dcache.restful.providers.pool;
 
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.Map;
 import org.dcache.cells.json.CellData;
@@ -73,28 +72,28 @@ import org.dcache.util.histograms.Histogram;
  * <p>Some of the fields may be <code>null</code>, depending on the
  * type of request this is used to respond to.</p>
  */
-@ApiModel(description = "Container for all metadata requests pertaining to a pool group.")
+@Schema(description = "Container for all metadata requests pertaining to a pool group.")
 public class PoolGroupInfo implements Serializable {
 
     private static final long serialVersionUID = 9147099707348977674L;
 
-    @ApiModelProperty("Histogram data for the mover "
+    @Schema(description = "Histogram data for the mover "
           + "activity statistics on the pools of the group.")
     private Histogram[] groupQueueStat;
 
-    @ApiModelProperty("Histogram data for the file lifetime statistics"
+    @Schema(description = "Histogram data for the file lifetime statistics"
           + " on the pools of the group.")
     private Histogram[] groupFileStat;
 
-    @ApiModelProperty("Aggregated space data for pools in the group.")
+    @Schema(description = "Aggregated space data for pools in the group.")
     private PoolSpaceData groupSpaceData;
 
-    @ApiModelProperty("Pool cost information for the pools in the group.")
+    @Schema(description = "Pool cost information for the pools in the group.")
     private Map<String, PoolCostData> costDataForPools;
 
     private Map<String, StorageUnitSpaceStatistics> spaceDataByStorageUnit;
 
-    @ApiModelProperty("Cell data for each of the pools in the group.")
+    @Schema(description = "Cell data for each of the pools in the group.")
     private Map<String, CellData> cellDataForPools;
 
     public Map<String, CellData> getCellDataForPools() {

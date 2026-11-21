@@ -63,12 +63,12 @@ import static org.dcache.http.AuthenticationFilter.getLoginAttributes;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import diskCacheV111.util.FsPath;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -82,7 +82,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -100,7 +99,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "tape", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "tape")
+@SecurityRequirement(name = "basicAuth")
 @Path("tape/archiveinfo")
 public final class ArchiveInfoResources {
 
@@ -126,19 +126,19 @@ public final class ArchiveInfoResources {
      * @return list of ArchiveInfo objects.
      */
     @POST
-    @ApiOperation(value = "Return the file locality information for a list of file paths.")
+    @Operation(summary = "Return the file locality information for a list of file paths.")
     @ApiResponses({
-          @ApiResponse(code = 201, message = "Created"),
-          @ApiResponse(code = 400, message = "Bad request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 429, message = "Too many requests"),
-          @ApiResponse(code = 500, message = "Internal Server Error")
+          @ApiResponse(responseCode = "201", description = "Created"),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "429", description = "Too many requests"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error")
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public List<ArchiveInfo> getArchiveInfo(
-          @ApiParam(value = "Request structure:\n\n"
+          @Parameter(description = "Request structure:\n\n"
                 + "**paths** - array of paths for which to return archive info (file locality).",
                 required = true)
                 String requestPayload) {

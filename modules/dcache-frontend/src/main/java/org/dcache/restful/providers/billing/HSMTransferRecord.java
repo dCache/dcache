@@ -59,16 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.dcache.services.billing.db.data.StorageRecord;
 
-@ApiModel(description = "Properties pertinent to tape operations.")
+@Schema(description = "Properties pertinent to tape operations.")
 public final class HSMTransferRecord extends BillingTransferRecord {
 
     private static final String MAINFORMAT = "%s (pool %s)(connect %s)(queued %s) %s\n";
 
-    @ApiModelProperty("Pool to which the file is staged "
+    @Schema(description = "Pool to which the file is staged "
           + "or from which it is flushed to tape.")
     private String pool;
 

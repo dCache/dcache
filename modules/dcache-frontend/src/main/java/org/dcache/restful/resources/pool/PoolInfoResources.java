@@ -75,13 +75,13 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import io.swagger.annotations.ResponseHeader;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -136,7 +136,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "pools", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "pools")
+@SecurityRequirement(name = "basicAuth")
 @Path("/pools")
 public final class PoolInfoResources {
 
@@ -174,7 +175,7 @@ public final class PoolInfoResources {
     private boolean unlimitedOperationVisibility;
 
     @GET
-    @ApiOperation("Get information about all pools (name, group membership, links).  "
+    @Operation(summary = "Get information about all pools (name, group membership, links).  "
           + "Results sorted lexicographically by pool name.")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Pool> getPools() throws CacheException {
@@ -189,14 +190,15 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get information about a specific pool (name, group membership, links).")
+    @Operation(summary = "Get information about a specific pool (name, group membership, links).")
     @ApiResponses({
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "200", description = "successful operation"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Pool getPool(@ApiParam(value = "The pool to be described.",
+    public Pool getPool(@Parameter(description = "The pool to be described.",
           required = true)
     @PathParam("pool") String pool) {
         try {
@@ -214,10 +216,10 @@ public final class PoolInfoResources {
     }
 
     @GET
-    @ApiOperation("Get information about a specific pool (configuration, state, usage).")
+    @Operation(summary = "Get information about a specific pool (configuration, state, usage).")
     @Path("/{pool}/usage")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getPoolUsage(@ApiParam(value = "The pool to be described.",
+    public PoolInfo getPoolUsage(@Parameter(description = "The pool to be described.",
           required = true)
     @PathParam("pool") String pool) {
         PoolInfo info = new PoolInfo();
@@ -230,14 +232,14 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get information about a specific PNFS-ID usage within a "
+    @Operation(summary = "Get information about a specific PNFS-ID usage within a "
           + "specific pool.")
     @Path("/{pool}/{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getRepositoryInfoForFile(@ApiParam(value = "The pool to be described.",
+    public PoolInfo getRepositoryInfoForFile(@Parameter(description = "The pool to be described.",
           required = true)
     @PathParam("pool") String pool,
-          @ApiParam(value = "The PNFS-ID of the file to be described.",
+          @Parameter(description = "The PNFS-ID of the file to be described.",
                 required = true)
           @PathParam("pnfsid") PnfsId pnfsid) {
         PoolInfo info = new PoolInfo();
@@ -249,10 +251,11 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get histogram data concerning activity on a specific pool (48-hour window).")
+    @Operation(summary = "Get histogram data concerning activity on a specific pool (48-hour "
+          + "window).")
     @Path("/{pool}/histograms/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getQueueHistograms(@ApiParam(value = "The pool to be described.",
+    public PoolInfo getQueueHistograms(@Parameter(description = "The pool to be described.",
           required = true)
     @PathParam("pool") String group) {
         PoolInfo info = new PoolInfo();
@@ -264,10 +267,11 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get histogram data concerning file lifetime on a specific pool (60-day window).")
+    @Operation(summary = "Get histogram data concerning file lifetime on a specific pool (60-day "
+          + "window).")
     @Path("/{pool}/histograms/files")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getFilesHistograms(@ApiParam(value = "The pool to be described.",
+    public PoolInfo getFilesHistograms(@Parameter(description = "The pool to be described.",
           required = true)
     @PathParam("pool") String group) {
         PoolInfo info = new PoolInfo();
@@ -279,43 +283,44 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation(value = "Get mover information for a specific pool.",
-          responseHeaders = {
-                @ResponseHeader(name = "X-Total-Count", description = "Total "
+    @Operation(summary = "Get mover information for a specific pool.")
+    @ApiResponses({
+          @ApiResponse(responseCode = "200", description = "successful operation", headers = {
+                @Header(name = "X-Total-Count", description = "Total "
                       + "number of potential responses.  This may be greater "
                       + "than the number of response if offset or limit are "
                       + "specified")
-          })
-    @ApiResponses({
-          @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          }),
+          @ApiResponse(responseCode = "403",
+                description = "Pool command only accessible to admin users."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}/movers")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<MoverData> getMovers(@ApiParam("The pool to be described.")
+    public List<MoverData> getMovers(@Parameter(description = "The pool to be described.")
     @PathParam("pool") String pool,
-          @ApiParam("A comma-seperated list of mover types. "
+          @Parameter(description = "A comma-seperated list of mover types. "
                 + "Currently, either 'p2p-client,p2p-server' "
                 + "or none (meaning all) is supported.")
           @QueryParam("type") String typeList,
-          @ApiParam("The number of items to skip.")
+          @Parameter(description = "The number of items to skip.")
           @DefaultValue("0")
           @QueryParam("offset") int offset,
-          @ApiParam("The maximum number of items to return.")
+          @Parameter(description = "The maximum number of items to return.")
           @QueryParam("limit") Integer limit,
-          @ApiParam("Select movers operating on a specific PNFS-ID.")
+          @Parameter(description = "Select movers operating on a specific PNFS-ID.")
           @QueryParam("pnfsid") String pnfsid,
-          @ApiParam("Select movers with a specific queue.")
+          @Parameter(description = "Select movers with a specific queue.")
           @QueryParam("queue") String queue,
-          @ApiParam("Select movers in a particular state.")
+          @Parameter(description = "Select movers in a particular state.")
           @QueryParam("state") String state,
-          @ApiParam("Select movers with a specific mode.")
+          @Parameter(description = "Select movers with a specific mode.")
           @QueryParam("mode") String mode,
-          @ApiParam("Select movers initiated by a specific door.")
+          @Parameter(description = "Select movers initiated by a specific door.")
           @QueryParam("door") String door,
-          @ApiParam("Select movers with a specific storage class.")
+          @Parameter(description = "Select movers with a specific storage class.")
           @QueryParam("storageClass") String storageClass,
-          @ApiParam("How returned items should be sorted.")
+          @Parameter(description = "How returned items should be sorted.")
           @DefaultValue("door,startTime")
           @QueryParam("sort") String sort) {
         if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
@@ -372,32 +377,35 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get nearline activity information for a specific pool.")
+    @Operation(summary = "Get nearline activity information for a specific pool.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "unrecognized queue type"),
-          @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "200", description = "successful operation"),
+          @ApiResponse(responseCode = "400", description = "unrecognized queue type"),
+          @ApiResponse(responseCode = "403",
+                description = "Pool command only accessible to admin users."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}/nearline/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<NearlineData> getNearlineQueues(@ApiParam("The pool to be described.")
-    @PathParam("pool") String pool,
-          @ApiParam("Select transfers of a specific type "
+    public List<NearlineData> getNearlineQueues(
+          @Parameter(description = "The pool to be described.")
+          @PathParam("pool") String pool,
+          @Parameter(description = "Select transfers of a specific type "
                 + "(flush, stage, remove).")
           @DefaultValue("flush,stage,remove")
           @QueryParam("type") String typeList,
-          @ApiParam("The number of items to skip.")
+          @Parameter(description = "The number of items to skip.")
           @DefaultValue("0")
           @QueryParam("offset") int offset,
-          @ApiParam("The maximum number of items to return.")
+          @Parameter(description = "The maximum number of items to return.")
           @QueryParam("limit") Integer limit,
-          @ApiParam("Select only operations affecting this PNFS-ID.")
+          @Parameter(description = "Select only operations affecting this PNFS-ID.")
           @QueryParam("pnfsid") String pnfsid,
-          @ApiParam("Select only operations in this state.")
+          @Parameter(description = "Select only operations in this state.")
           @QueryParam("state") String state,
-          @ApiParam("Select only operations of this storage class.")
+          @Parameter(description = "Select only operations of this storage class.")
           @QueryParam("storageClass") String storageClass,
-          @ApiParam("How the returned values should be sorted.")
+          @Parameter(description = "How the returned values should be sorted.")
           @DefaultValue("class,created")
           @QueryParam("sort") String sort) {
         if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
@@ -464,18 +472,20 @@ public final class PoolInfoResources {
     }
 
     @DELETE
-    @ApiOperation("Kill a mover.  Requires admin role.")
+    @Operation(summary = "Kill a mover.  Requires admin role.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "403",
+                description = "Pool command only accessible to admin users."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}/movers/{id : [0-9]+}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response killMovers(@ApiParam(value = "The pool with the mover to be killed.",
+    public Response killMovers(@Parameter(description = "The pool with the mover to be killed.",
           required = true)
     @PathParam("pool") String pool,
-          @ApiParam(value = "The id of the mover to be killed.",
+          @Parameter(description = "The id of the mover to be killed.",
                 required = true)
           @PathParam("id") int id) {
         RequestUser.checkAdmin("Pool command only accessible to admin users.");
@@ -508,19 +518,21 @@ public final class PoolInfoResources {
     }
 
     @PATCH
-    @ApiOperation("Modify a pool's mode.  Requires admin role. This change is not persistent after restart")
+    @Operation(summary = "Modify a pool's mode.  Requires admin role. This change is not persistent after restart")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "403",
+                description = "Pool command only accessible to admin users."),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}/usage/mode")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateMode(@ApiParam(value = "The pool affected by the mode change.",
+    public Response updateMode(@Parameter(description = "The pool affected by the mode change.",
           required = true)
     @PathParam("pool") String pool,
-          @ApiParam(value = "JSON object describing how the "
+          @Parameter(description = "JSON object describing how the "
                 + "pool should be modified. "
                 + "(Corresponds to PoolModeUpdate.)",
                 required = true)
@@ -546,17 +558,17 @@ public final class PoolInfoResources {
     }
 
     @POST
-    @ApiOperation("Add a pool via 'psu create pool'. Requires admin role. "
+    @Operation(summary = "Add a pool via 'psu create pool'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Created"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-            @ApiResponse(code = 409, message = "Pool already exists"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Pool command only accessible to admin users."),
+            @ApiResponse(responseCode = "409", description = "Pool already exists"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addPool(@ApiParam(value = "JSON object describing the new pool: "
+    public Response addPool(@Parameter(description = "JSON object describing the new pool: "
             + "name (String, required), "
             + "noping, disabled, rdonly (boolean, default false).",
             required = true) String requestPayload) {
@@ -583,20 +595,21 @@ public final class PoolInfoResources {
     }
 
     @PATCH
-    @ApiOperation("Change a pool's selection settings via 'psu set pool'. Requires admin role. "
+    @Operation(summary = "Change a pool's selection settings via 'psu set pool'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Pool command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updatePoolMode(@ApiParam(value = "The pool affected by the mode change.",
+    public Response updatePoolMode(@Parameter(description = "The pool affected by the mode change.",
                     required = true)
             @PathParam("pool") String pool,
-            @ApiParam(value = "JSON object describing the pool's selection settings: "
+            @Parameter(description = "JSON object describing the pool's selection settings: "
                     + "disabled, noping, rdonly (boolean). Only fields present are changed.",
                     required = true) String requestPayload) {
 
@@ -633,17 +646,18 @@ public final class PoolInfoResources {
     }
 
     @DELETE
-    @ApiOperation("Remove a stopped pool via 'psu remove pool'. Requires admin role. "
+    @Operation(summary = "Remove a stopped pool via 'psu remove pool'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 409, message = "Pool is running"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Pool command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "409", description = "Pool is running"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/{pool}")
-    public Response deletePool(@ApiParam(value = "The pool to be deleted.",
+    public Response deletePool(@Parameter(description = "The pool to be deleted.",
                     required = true)
             @PathParam("pool") String pool) {
 

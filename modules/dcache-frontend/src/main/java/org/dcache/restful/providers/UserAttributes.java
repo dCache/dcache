@@ -18,8 +18,7 @@
  */
 package org.dcache.restful.providers;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
@@ -28,7 +27,7 @@ import java.util.Objects;
 /**
  * Class to hold information for a JSON response querying information about a user.
  */
-@ApiModel(description = "Description about a specific user.")
+@Schema(description = "Description about a specific user.")
 public class UserAttributes implements Serializable {
 
     @Serial
@@ -41,39 +40,39 @@ public class UserAttributes implements Serializable {
      * supplied no credentials or that the credentials failed to authenticate the user (e.g., wrong
      * password).
      */
-    @ApiModelProperty(value = "The authentication status of this user.",
-          allowableValues = "ANONYMOUS, AUTHENTICATED")
+    @Schema(description = "The authentication status of this user.",
+          allowableValues = {"ANONYMOUS", "AUTHENTICATED"})
     private AuthenticationStatus status;
 
     /**
      * The UID of the user, if the user has status AUTHENTICATED, null otherwise.
      */
-    @ApiModelProperty(value = "The numerical uid for this user.",
-          allowableValues = "range[0,infinity]")
+    @Schema(description = "The numerical uid for this user.",
+          minimum = "0")
     private Long uid;
 
-    @ApiModelProperty(value = "The numerical gids for this user, the first "
+    @Schema(description = "The numerical gids for this user, the first "
           + "value is the primary gid.",
-          allowableValues = "range[0,infinity]")
+          minimum = "0")
     private List<Long> gids;
 
-    @ApiModelProperty("The list of roles that the user choose to assert.")
+    @Schema(description = "The list of roles that the user choose to assert.")
     private List<String> roles;
 
-    @ApiModelProperty("The list of roles that the user is entitled to "
+    @Schema(description = "The list of roles that the user is entitled to "
           + "assert, but chose not to.")
     private List<String> unassertedRoles;
 
-    @ApiModelProperty(value = "The user's home directory.")
+    @Schema(description = "The user's home directory.")
     private String home;
 
-    @ApiModelProperty(value = "The user's root directory.")
+    @Schema(description = "The user's root directory.")
     private String root;
 
-    @ApiModelProperty(value = "The username for this user.")
+    @Schema(description = "The username for this user.")
     private String username;
 
-    @ApiModelProperty("The list of email addresses known for this user.")
+    @Schema(description = "The list of email addresses known for this user.")
     private List<String> email;
 
     public List<String> getEmail() {

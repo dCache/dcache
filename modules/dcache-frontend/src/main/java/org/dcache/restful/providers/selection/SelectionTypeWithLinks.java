@@ -60,12 +60,12 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.selection;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public abstract class SelectionTypeWithLinks extends SelectionType {
 
-    @ApiModelProperty("The associated links.")
+    @Schema(description = "The associated links.")
     protected final List<String> links;
 
     public SelectionTypeWithLinks() {

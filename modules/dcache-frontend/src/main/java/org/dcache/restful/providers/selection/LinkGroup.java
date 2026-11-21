@@ -62,28 +62,27 @@ package org.dcache.restful.providers.selection;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ApiModel(description = "Information about a specific link group.")
+@Schema(description = "Information about a specific link group.")
 public final class LinkGroup extends SelectionTypeWithLinks {
 
-    @ApiModelProperty("Whether custodial retention policy is allowed.")
+    @Schema(description = "Whether custodial retention policy is allowed.")
     private final boolean custodialAllowed;
 
-    @ApiModelProperty("Whether output retention policy is allowed.")
+    @Schema(description = "Whether output retention policy is allowed.")
     private final boolean outputAllowed;
 
-    @ApiModelProperty("Whether replica retention policy is allowed.")
+    @Schema(description = "Whether replica retention policy is allowed.")
     private final boolean replicaAllowed;
 
-    @ApiModelProperty("Whether online access latency is allowed.")
+    @Schema(description = "Whether online access latency is allowed.")
     private final boolean onlineAllowed;
 
-    @ApiModelProperty("Whether nearline access latency is allowed.")
+    @Schema(description = "Whether nearline access latency is allowed.")
     private final boolean nearlineAllowed;
 
     public LinkGroup() {

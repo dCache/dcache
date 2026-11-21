@@ -19,7 +19,7 @@
 package org.dcache.restful.events;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class EventStreamRepository {
 
     public class EventStreamMetadata {
 
-        @ApiModelProperty("Provide a short (typically single sentence) "
+        @Schema(description = "Provide a short (typically single sentence) "
               + "description of the generated events.")
         public final String description;
 

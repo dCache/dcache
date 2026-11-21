@@ -59,19 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.dcache.services.billing.db.data.TransferRecord;
 
-@ApiModel(description = "Properties pertinent to Pool-to-pool transfers.")
+@Schema(description = "Properties pertinent to Pool-to-pool transfers.")
 public final class P2PTransferRecord extends DiskTransferRecord {
 
     private static final String MAINFORMAT = "%s (from %s)(to %s)(%s)(transferred %s) %s\n";
 
-    @ApiModelProperty("Source of the copy.")
+    @Schema(description = "Source of the copy.")
     private String serverPool;
 
-    @ApiModelProperty("Destination of the copy.")
+    @Schema(description = "Destination of the copy.")
     private String clientPool;
 
     public P2PTransferRecord() {

@@ -153,9 +153,6 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
                 holder.setName(entry.name);
             }
             holder.setInitParameters(entry.initParameters);
-            if (entry.pathSpecs.isEmpty()) {
-                servletHandler.addServlet(holder);
-            }
             for (String pathSpec : entry.pathSpecs) {
                 context.addServlet(holder, pathSpec);
             }
@@ -212,7 +209,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
 
         private Servlet servlet;
         private String name;
-        private List<String> pathSpecs = List.of();
+        private List<String> pathSpecs;
         private Map<String, String> initParameters = Map.of();
 
         @Required
@@ -229,9 +226,8 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
 
         /**
          * Sets the servlet path specs the servlet serves, e.g. {@code /static/*} or {@code /}.
-         * A servlet without path specs serves no requests; it is only initialised, e.g. to
-         * configure the context.
          */
+        @Required
         public void setPathSpecs(List<String> pathSpecs) {
             this.pathSpecs = List.copyOf(pathSpecs);
         }

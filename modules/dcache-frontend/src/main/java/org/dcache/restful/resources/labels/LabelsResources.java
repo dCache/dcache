@@ -26,12 +26,12 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -75,7 +75,8 @@ import org.springframework.stereotype.Component;
 /**
  * RestFul API to  provide files/folders manipulation operations.
  */
-@Api(value = "labels", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "labels")
+@SecurityRequirement(name = "basicAuth")
 @Component
 @Path("/labels")
 public class LabelsResources {
@@ -107,19 +108,19 @@ public class LabelsResources {
     private CellStub pinmanager;
 
     @GET
-    @ApiOperation(value = "List all existing labels.",
-            notes = "The method offers the possibility to query all existing labels.")
+    @Operation(summary = "List all existing labels.",
+            description = "The method offers the possibility to query all existing labels.")
     @ApiResponses({
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Forbidden"),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getListLabels(
-            @ApiParam("Limit number of replies in labels listing.")
+            @Parameter(description = "Limit number of replies in labels listing.")
             @QueryParam("limit") String limit,
-            @ApiParam("Number of entries to skip in labels listing.")
+            @Parameter(description = "Number of entries to skip in labels listing.")
             @QueryParam("offset") String offset) throws CacheException {
 
         JsonListLabels labels = new JsonListLabels();
@@ -179,37 +180,37 @@ public class LabelsResources {
     }
 
     @GET
-    @ApiOperation(value = "Find metadata and optionally virtual directory contents.",
-          notes = "The method offers the possibility to list the content of a virtual"
+    @Operation(summary = "Find metadata and optionally virtual directory contents.",
+          description = "The method offers the possibility to list the content of a virtual"
                 + "directory for labels.")
     @ApiResponses({
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getFileAttributes(@ApiParam("Path of file or directory.")
+    public Response getFileAttributes(@Parameter(description = "Path of file or directory.")
     @PathParam("path") String requestPath,
-          @ApiParam("Whether to include directory listing.")
+          @Parameter(description = "Whether to include directory listing.")
           @DefaultValue("false")
           @QueryParam("children") boolean isList,
-          @ApiParam("List virtual dir.")
+          @Parameter(description = "List virtual dir.")
           @DefaultValue("false")
           @QueryParam("locality") boolean isLocality,
-          @ApiParam(value = "Whether to include replica locations.")
+          @Parameter(description = "Whether to include replica locations.")
           @QueryParam("locations") boolean isLocations,
-          @ApiParam(value = "Whether to include quality of service.")
+          @Parameter(description = "Whether to include quality of service.")
           @DefaultValue("false")
           @QueryParam("qos") boolean isQos,
-          @ApiParam("Whether to include extended attributes.")
+          @Parameter(description = "Whether to include extended attributes.")
           @QueryParam("xattr") boolean isXattr,
-          @ApiParam("Whether to include labels.")
+          @Parameter(description = "Whether to include labels.")
           @QueryParam("labels") boolean isLabels,
-          @ApiParam("Limit number of replies in directory listing.")
+          @Parameter(description = "Limit number of replies in directory listing.")
           @QueryParam("limit") String limit,
-          @ApiParam("Number of entries to skip in directory listing.")
+          @Parameter(description = "Number of entries to skip in directory listing.")
           @QueryParam("offset") String offset) throws CacheException {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes =

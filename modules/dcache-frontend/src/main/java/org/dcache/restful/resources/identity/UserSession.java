@@ -19,9 +19,9 @@
 package org.dcache.restful.resources.identity;
 
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.GET;
@@ -30,7 +30,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.Responses;
 import org.slf4j.Logger;
@@ -47,7 +46,8 @@ import org.springframework.stereotype.Component;
  * code-flow and non code flow.This should be fixed latter.
  */
 @Component
-@Api(value = "identity", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "identity")
+@SecurityRequirement(name = "basicAuth")
 @Path("/usersession")
 //TODO this class will be modified or deleted  it is user session used indcache view has nothing to do with code flow
 public class UserSession {
@@ -55,8 +55,8 @@ public class UserSession {
 
 
     @GET
-    @ApiOperation(value = "Provide information about the current user.",
-          notes = "An introspection endpoint to allow the client to discover "
+    @Operation(summary = "Provide information about the current user.",
+          description = "An introspection endpoint to allow the client to discover "
                 + "information about the current user.")
     @Produces(MediaType.APPLICATION_JSON)
 

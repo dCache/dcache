@@ -66,12 +66,12 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -116,7 +116,8 @@ import org.springframework.stereotype.Component;
  */
 
 @Component
-@Api(value = "qos-policy", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "qos-policy")
+@SecurityRequirement(name = "basicAuth")
 @Path("/qos-policy")
 public class QoSPolicyResource {
 
@@ -135,12 +136,12 @@ public class QoSPolicyResource {
      * @return List of policy names
      */
     @GET
-    @ApiOperation(value = "List all the registered QoS policy names.")
+    @Operation(summary = "List all the registered QoS policy names.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response listPolicies() {
@@ -172,17 +173,17 @@ public class QoSPolicyResource {
      */
     @GET
     @Path("{name}")
-    @ApiOperation(value = "Retrieve a specific QoS policy by name.")
+    @Operation(summary = "Retrieve a specific QoS policy by name.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Policy Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Policy Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPolicy(
-          @ApiParam("The name of the policy (unique to this dCache instance).")
+          @Parameter(description = "The name of the policy (unique to this dCache instance).")
           @PathParam("name")String name) {
         PnfsManagerGetQoSPolicyMessage message = new PnfsManagerGetQoSPolicyMessage(name);
         message.setSubject(getCurrentSubject());
@@ -221,16 +222,16 @@ public class QoSPolicyResource {
      */
     @DELETE
     @Path("{name}")
-    @ApiOperation(value = "Permanently delete a QoS policy by name.")
+    @Operation(summary = "Permanently delete a QoS policy by name.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Policy Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Policy Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     public Response deletePolicy(
-          @ApiParam("The name of the policy (unique to this dCache instance).")
+          @Parameter(description = "The name of the policy (unique to this dCache instance).")
           @PathParam("name")String name) {
         PnfsManagerRmQoSPolicyMessage message = new PnfsManagerRmQoSPolicyMessage(name);
         message.setSubject(getCurrentSubject());
@@ -264,19 +265,19 @@ public class QoSPolicyResource {
      * @return HTTP 200 OK
      */
     @POST
-    @ApiOperation(value = "Add a QoS policy by this name; if a policy is currently "
+    @Operation(summary = "Add a QoS policy by this name; if a policy is currently "
           + "mapped to that name, an error is returned.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad Request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad Request"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
-          @ApiParam(value = "Description of the QoS policy, which defines the following:\n\n"
+          @Parameter(description = "Description of the QoS policy, which defines the following:\n\n"
                 + "**name** - String identifier.  Required.\n"
                 + "**states** - Ordered list (array) of states. Required\n\n"
                 + "Each state consists of:\n"

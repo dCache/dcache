@@ -62,8 +62,7 @@ package org.dcache.restful.providers.billing;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.dcache.services.billing.db.data.TransferRecord;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -73,13 +72,13 @@ import org.dcache.services.billing.db.data.TransferRecord;
 
       @JsonSubTypes.Type(value = P2PTransferRecord.class, name = "P2P")}
 )
-@ApiModel(description = "Properties pertinent to door and pool-to-pool transfers.")
+@Schema(description = "Properties pertinent to door and pool-to-pool transfers.")
 public abstract class DiskTransferRecord extends BillingTransferRecord {
 
-    @ApiModelProperty("Client name/IP which initiated the transaction.")
+    @Schema(description = "Client name/IP which initiated the transaction.")
     protected String client;
 
-    @ApiModelProperty("Number of bytes transferred.")
+    @Schema(description = "Number of bytes transferred.")
     protected Long transfersize;
 
     protected DiskTransferRecord() {

@@ -61,54 +61,53 @@ package org.dcache.restful.providers.restores;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import org.dcache.util.InvalidatableItem;
 
-@ApiModel(description = "Container for metadata pertaining to a file stage from tape.")
+@Schema(description = "Container for metadata pertaining to a file stage from tape.")
 public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, Serializable {
 
-    @ApiModelProperty("Identifies the transfer.")
+    @Schema(description = "Identifies the transfer.")
     private String key;
 
-    @ApiModelProperty("PnfsId of staged file.")
+    @Schema(description = "PnfsId of staged file.")
     private PnfsId pnfsId;
 
-    @ApiModelProperty("Path of staged file.")
+    @Schema(description = "Path of staged file.")
     private String path;
 
-    @ApiModelProperty("Owner of the staged file.")
+    @Schema(description = "Owner of the staged file.")
     private String owner;
 
-    @ApiModelProperty("Owner group of the staged file.")
+    @Schema(description = "Owner group of the staged file.")
     private String ownerGroup;
 
-    @ApiModelProperty("Net identifier of the staging host.")
+    @Schema(description = "Net identifier of the staging host.")
     private String subnet;
 
-    @ApiModelProperty("Pool selected for the stage.")
+    @Schema(description = "Pool selected for the stage.")
     private String poolCandidate;
 
-    @ApiModelProperty("Staging began at this timestamp, in unix-time.")
+    @Schema(description = "Staging began at this timestamp, in unix-time.")
     private Long started;
 
-    @ApiModelProperty("Number of clients waiting for this file.")
+    @Schema(description = "Number of clients waiting for this file.")
     private Integer clients;
 
-    @ApiModelProperty("Number of times staging failed and was retried.")
+    @Schema(description = "Number of times staging failed and was retried.")
     private Integer retries;
 
-    @ApiModelProperty("Current state of the request.")
+    @Schema(description = "Current state of the request.")
     private String status;
 
-    @ApiModelProperty("dCache error code.")
+    @Schema(description = "dCache error code.")
     private Integer error;
 
-    @ApiModelProperty("Description of error, if any.")
+    @Schema(description = "Description of error, if any.")
     private String errorMessage;
 
-    @ApiModelProperty("Validity of current request.")
+    @Schema(description = "Validity of current request.")
     private boolean valid;
 
     public RestoreInfo() {

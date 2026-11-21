@@ -497,18 +497,6 @@
           <property name="pathSpecs" value="/api/v1/*"/>
         </bean>
         <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
-          <description>Configures swagger; serves no requests</description>
-          <property name="name" value="Jersey2Config"/>
-          <property name="servlet">
-            <bean class="io.swagger.jersey.config.JerseyJaxrsConfig"/>
-          </property>
-          <property name="initParameters">
-            <map>
-              <entry key="swagger.api.basepath" value="/api/v1"/>
-            </map>
-          </property>
-        </bean>
-        <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
           <description>Provide access to dCache customised swagger-ui</description>
           <property name="name" value="swagger-ui"/>
           <property name="servlet">

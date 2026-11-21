@@ -61,23 +61,22 @@ package org.dcache.restful.providers.selection;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ApiModel(description = "A selection unit describes a predicate that might be satisfied by "
+@Schema(description = "A selection unit describes a predicate that might be satisfied by "
       + "a particular request.")
 public final class Unit extends SelectionType {
 
     private static final long serialVersionUID = 5839097559975700910L;
 
-    @ApiModelProperty(value = "The aspect of a request checked by this unit.",
-          allowableValues = "net,store,dcache,protocol")
+    @Schema(description = "The aspect of a request checked by this unit.",
+          allowableValues = {"net", "store", "dcache", "protocol"})
     private final String type;
 
-    @ApiModelProperty("The unit groups that reference this unit.")
+    @Schema(description = "The unit groups that reference this unit.")
     private final List<String> groups;
 
     public Unit() {

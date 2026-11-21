@@ -62,13 +62,13 @@ package org.dcache.restful.resources.selection;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import diskCacheV111.poolManager.PoolSelectionUnit.UnitType;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -88,9 +88,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;
-import org.dcache.restful.util.RequestUser;
-import org.dcache.restful.util.Responses;
 import org.dcache.restful.providers.selection.UnitGroup;
+import org.dcache.restful.util.Responses;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.selection.PsuAdminCommands;
 import org.dcache.restful.util.selection.SelectionNames;
 import org.json.JSONException;
@@ -105,7 +105,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "poolmanager")
+@SecurityRequirement(name = "basicAuth")
 @Path("/units")
 public final class UnitResources {
 
@@ -119,7 +120,7 @@ public final class UnitResources {
     private PsuAdminCommands psuAdminCommands;
 
     @GET
-    @ApiOperation("List all units."
+    @Operation(summary = "List all units."
           + " Results sorted lexicographically by unit name.")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUnits() {
@@ -133,7 +134,7 @@ public final class UnitResources {
 
 
     @GET
-    @ApiOperation("List all unitgroups."
+    @Operation(summary = "List all unitgroups."
           + " Results sorted lexicographically by unit group name.")
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
@@ -149,18 +150,18 @@ public final class UnitResources {
     }
 
     @POST
-    @ApiOperation("Add a unit via 'psu create unit'. Requires admin role. "
+    @Operation(summary = "Add a unit via 'psu create unit'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Created"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Unit command only accessible to admin users."),
-            @ApiResponse(code = 409, message = "Unit already exists"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Unit command only accessible to admin users."),
+            @ApiResponse(responseCode = "409", description = "Unit already exists"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addUnit(@ApiParam(value = "JSON object describing the new unit: "
+    public Response addUnit(@Parameter(description = "JSON object describing the new unit: "
             + "name (String, required, e.g. fuse:goettingen@osm, 131.169.0.0/16, Http/1), "
             + "type (String, required, one of store, net, protocol, dcache).",
             required = true) String requestPayload) {
@@ -186,19 +187,20 @@ public final class UnitResources {
     }
 
     @DELETE
-    @ApiOperation("Remove a unit via 'psu remove unit'. Requires admin role. "
+    @Operation(summary = "Remove a unit via 'psu remove unit'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Unit command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 409, message = "Conflict"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Unit command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "409", description = "Conflict"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{unit : .+}")
     public Response removeUnit(
-            @ApiParam(value = "The unit to be removed.", required = true)
+            @Parameter(description = "The unit to be removed.", required = true)
             @PathParam("unit") String unit) {
 
         RequestUser.checkAdmin("Unit command only accessible to admin users.");
@@ -209,19 +211,19 @@ public final class UnitResources {
     }
 
     @POST
-    @ApiOperation("Add a unit group via 'psu create ugroup'. Requires admin role. "
+    @Operation(summary = "Add a unit group via 'psu create ugroup'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Created"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Unit command only accessible to admin users."),
-            @ApiResponse(code = 409, message = "Unit group already exists"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Unit command only accessible to admin users."),
+            @ApiResponse(responseCode = "409", description = "Unit group already exists"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("/groups")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addUnitGroup(@ApiParam(value = "JSON object describing the new unit group: "
+    public Response addUnitGroup(@Parameter(description = "JSON object describing the new unit group: "
             + "name (String, required).", required = true) String requestPayload) {
 
         RequestUser.checkAdmin("Unit command only accessible to admin users.");
@@ -239,21 +241,22 @@ public final class UnitResources {
     }
 
     @PUT
-    @ApiOperation("Add a unit to a unit group via 'psu addto ugroup'. Requires admin role. "
+    @Operation(summary = "Add a unit to a unit group via 'psu addto ugroup'. Requires admin role. "
             + "Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Unit command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 409, message = "Unit is already a member of the unit group"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Unit command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "409", description = "Unit is already a member of the unit group"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/groups/{group}/units/{unit : .+}")
     public Response addUnitToGroup(
-            @ApiParam(value = "The unit group the unit should be added to.", required = true)
+            @Parameter(description = "The unit group the unit should be added to.", required = true)
             @PathParam("group") String group,
-            @ApiParam(value = "The unit to be added.", required = true)
+            @Parameter(description = "The unit to be added.", required = true)
             @PathParam("unit") String unit) {
 
         RequestUser.checkAdmin("Unit command only accessible to admin users.");
@@ -265,20 +268,21 @@ public final class UnitResources {
     }
 
     @DELETE
-    @ApiOperation("Remove a unit from a unit group via 'psu removefrom ugroup'. "
+    @Operation(summary = "Remove a unit from a unit group via 'psu removefrom ugroup'. "
             + "Requires admin role. Saves the PoolManager configuration.")
     @ApiResponses({
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 403, message = "Unit command only accessible to admin users."),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Internal Server Error"),
+            @ApiResponse(responseCode = "200", description = "successful operation"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "403", description = "Unit command only accessible to admin users."),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/groups/{group}/units/{unit : .+}")
     public Response removeUnitFromGroup(
-            @ApiParam(value = "The unit group the unit should be removed from.", required = true)
+            @Parameter(description = "The unit group the unit should be removed from.", required = true)
             @PathParam("group") String group,
-            @ApiParam(value = "The unit to be removed.", required = true)
+            @Parameter(description = "The unit to be removed.", required = true)
             @PathParam("unit") String unit) {
 
         RequestUser.checkAdmin("Unit command only accessible to admin users.");

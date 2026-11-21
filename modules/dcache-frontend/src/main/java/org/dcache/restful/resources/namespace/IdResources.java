@@ -67,12 +67,12 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -109,7 +109,8 @@ import org.springframework.stereotype.Component;
  * @version v1.0
  */
 @Component
-@Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
+@Tag(name = "namespace")
+@SecurityRequirement(name = "basicAuth")
 @Path("/id")
 public class IdResources {
 
@@ -134,19 +135,19 @@ public class IdResources {
 
 
     @GET
-    @ApiOperation(value = "Discover information about a file from the PNFS-ID.",
-          notes = "Retrieve all file attributes plus the file's path from the "
+    @Operation(summary = "Discover information about a file from the PNFS-ID.",
+          description = "Retrieve all file attributes plus the file's path from the "
                 + "given PNFS-ID.")
     @ApiResponses({
-          @ApiResponse(code = 400, message = "Bad pnsfid"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 404, message = "Not Found"),
-          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(responseCode = "400", description = "Bad pnsfid"),
+          @ApiResponse(responseCode = "401", description = "Unauthorized"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found"),
+          @ApiResponse(responseCode = "500", description = "Internal Server Error"),
     })
     @Path("{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
+    public Response getAttributes(@Parameter(description = "The PNFS-ID of a file or directory.")
     @PathParam("pnfsid") String value) {
 
         if (RequestUser.isAnonymous()) {

@@ -60,49 +60,48 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.space;
 
 import diskCacheV111.services.space.LinkGroup;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@ApiModel(description = "Container for metadata pertaining to a link group.")
+@Schema(description = "Container for metadata pertaining to a link group.")
 public class LinkGroupInfo implements Serializable {
 
     private static final long serialVersionUID = -8947531878064847599L;
 
-    @ApiModelProperty("The identifier of the group.")
+    @Schema(description = "The identifier of the group.")
     private long id;
 
-    @ApiModelProperty("The name of the group.")
+    @Schema(description = "The name of the group.")
     private String name;
 
-    @ApiModelProperty("Unreserved space in the group.")
+    @Schema(description = "Unreserved space in the group.")
     private long availableSpace;
 
-    @ApiModelProperty("Files with ONLINE access latency can be stored.")
+    @Schema(description = "Files with ONLINE access latency can be stored.")
     private boolean onlineAllowed;
 
-    @ApiModelProperty("Files with NEARLINE access latency can be stored.")
+    @Schema(description = "Files with NEARLINE access latency can be stored.")
     private boolean nearlineAllowed;
 
-    @ApiModelProperty("Files with REPLICA retention policy can be stored.")
+    @Schema(description = "Files with REPLICA retention policy can be stored.")
     private boolean replicaAllowed;
 
-    @ApiModelProperty("Files with OUTPUT retention policy can be stored.")
+    @Schema(description = "Files with OUTPUT retention policy can be stored.")
     private boolean outputAllowed;
 
-    @ApiModelProperty("Files with CUSTODIAL retention policy can be stored.")
+    @Schema(description = "Files with CUSTODIAL retention policy can be stored.")
     private boolean custodialAllowed;
 
-    @ApiModelProperty("List of VOs which can access this link group.")
+    @Schema(description = "List of VOs which can access this link group.")
     private List<VOInfo> vos;
 
-    @ApiModelProperty("Last time the link group was updated.")
+    @Schema(description = "Last time the link group was updated.")
     private long updateTime;
 
-    @ApiModelProperty("Reserved space in the group.")
+    @Schema(description = "Reserved space in the group.")
     private long reservedSpace;
 
     public LinkGroupInfo() {
