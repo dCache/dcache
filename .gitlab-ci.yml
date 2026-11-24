@@ -926,6 +926,7 @@ generate_jacoco_report:
       optional: true
   script:
     - ./generate-jacoco-report.sh
+    - echo "JaCoCo report - ${CI_JOB_URL}/artifacts/file/target/coverage-reports/site/index.html"
   artifacts:
     paths:
       - target/coverage-reports/site/
