@@ -34,11 +34,21 @@ ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
 JACOCO_AGENT=""
 
+# Only classes built from dCache's own modules are instrumented. This also
+# matches the dCache projects nfs4j, oncrpc4j and xrootd4j (org.dcache.*). The
+# org.apache and org.globus entries are the few dCache classes that live in
+# library packages.
+JACOCO_INCLUDES="org.dcache.*:diskCacheV111.*:dmg.*:javatunnel.*:org.gaul.s3proxy.*"
+JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.apache.zookeeper.server.PatchedZooKeeperServer*"
+JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.apache.curator.framework.imps.PublicDelegatingCuratorFramework"
+JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.globus.gsi.gssapi.jaas.GlobusPrincipal"
+JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.globus.gsi.gssapi.jaas.SimplePrincipal"
+
 if [ "${JACOCO_ENABLED}" = "true" ] && [ -s "$JACOCO_AGENT_JAR" ]; then
     CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
     mkdir -p "$CLASS_DUMP_DIR"
     _opts="${JACOCO_OPTS:-output=tcpserver,address=*,port=6300,append=false}"
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},classdumpdir=${CLASS_DUMP_DIR}"
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},includes=${JACOCO_INCLUDES},classdumpdir=${CLASS_DUMP_DIR}"
     echo "JaCoCo enabled: ${_opts}"
 else
     echo "JaCoCo disabled."
@@ -65,7 +75,7 @@ exec /usr/bin/java \
 	-Djavax.security.auth.useSubjectCredsOnly=false \
 	-XX:+HeapDumpOnOutOfMemoryError \
 	-XX:HeapDumpPath=${DCACHE_INSTALL_DIR}/var/log/${DOMAIN}-oom.hprof \
-	${JACOCO_AGENT} \
+	${JACOCO_AGENT:+"${JACOCO_AGENT}"} \
 	-javaagent:${ASPECT_AGENT} \
 	-Djava.awt.headless=true -DwantLog4jSetup=n \
 	-Ddcache.home=${DCACHE_HOME} \
