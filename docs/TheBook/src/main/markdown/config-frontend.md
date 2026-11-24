@@ -204,6 +204,13 @@ origin plus `dcache-view.endpoints.webapi` (i.e.
 `{origin}/api/v1/auth/callback`), which always matches the callback
 the frontend serves.
 
+The former properties `frontend.authn.oidc.redirect-url` and
+`frontend.authn.oidc.redirect-url-host` are marked obsolete. If a site
+still sets them, `dcache check-config` and domain startup log a warning,
+and the values are otherwise ignored; remove them from the
+configuration. The client registered with the OpenID Provider must
+accept the redirect URL that dCache View derives from the request.
+
 ### Multiple OpenID Connect providers
 
 dCache View can offer several OpenID Connect providers.  Each of the

@@ -1885,6 +1885,11 @@ For conversion of old gridmap files please use the script below:
 sed '/^[# ]*"/s/"\(.*\)" \(.*\)$/dn:"\1" username:\2/' grid-mapfile > multimap-file
 ```
 
+The `gplazma.gridmap.file` property is marked obsolete. If a site still
+sets it, `dcache check-config` and domain startup log a warning, and the
+value is otherwise ignored. Remove the property from the configuration
+once the `multimap` plug-in is in use.
+
 
 ## gPlazma specific dCache configuration
 
