@@ -93,6 +93,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -113,6 +114,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.services.bulk.util.BulkTaskThrottle;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.SignalAware;
 import org.dcache.util.list.DirectoryEntry;
@@ -174,12 +176,16 @@ public final class BulkRequestContainerJob
     }
 
     /**
-     * Encapsulates manipulation of the semaphore.
+     * Encapsulates manipulation of the semaphore or throttle.
+     * <p>
+     * A task uses either a semaphore (blocking acquisition) or a throttle (non-blocking; the
+     * permit is granted by the throttle when the task is launched).
      */
     class PermitHolder {
 
         private final AtomicBoolean holdingPermit = new AtomicBoolean(false);
         private Semaphore taskSemaphore;
+        private BulkTaskThrottle taskThrottle;
 
         void acquireIfNotHoldingPermit() throws InterruptedException {
             if (taskSemaphore == null) {
@@ -191,23 +197,34 @@ public final class BulkRequestContainerJob
             }
         }
 
+        /**
+         * The throttle has acquired a permit on behalf of this task.
+         */
+        void permitGranted() {
+            holdingPermit.set(true);
+        }
+
         void throttledRelease() {
             activity.throttle();
             releaseIfHoldingPermit();
         }
 
         void releaseIfHoldingPermit() {
-            if (taskSemaphore == null) {
-                return;
-            }
-
             if (holdingPermit.compareAndSet(true, false)) {
-                taskSemaphore.release();
+                if (taskThrottle != null) {
+                    taskThrottle.release();
+                } else if (taskSemaphore != null) {
+                    taskSemaphore.release();
+                }
             }
         }
 
         void setTaskSemaphore(Semaphore taskSemaphore) {
             this.taskSemaphore = taskSemaphore;
+        }
+
+        void setTaskThrottle(BulkTaskThrottle taskThrottle) {
+            this.taskThrottle = taskThrottle;
         }
     }
 
@@ -258,11 +275,10 @@ public final class BulkRequestContainerJob
               throws BulkServiceException, CacheException {
             LOGGER.debug("{} - expandDepthFirst, {}, {}, {}, {}", ruid, id, pid, path,
                   dirAttributes);
-            try {
-                new DirListTask(id, pid, path, dirAttributes).submitAsync();
-            } catch (InterruptedException e) {
-                LOGGER.trace("{} - expandDepthFirst {} interrupted.", ruid, id);
-            }
+            /*
+             * Does not block: the listing is queued until a permit is available.
+             */
+            new DirListTask(id, pid, path, dirAttributes).submitAsync();
         }
 
         void submitAsync() throws InterruptedException {
@@ -316,7 +332,67 @@ public final class BulkRequestContainerJob
             this.path = path;
             this.dirAttributes = dirAttributes;
             taskExecutor = listExecutor;
-            permitHolder.setTaskSemaphore(dirListSemaphore);
+            permitHolder.setTaskThrottle(dirListThrottle);
+        }
+
+        /**
+         * Registers the task as running and queues it for listing without blocking.
+         * <p>
+         * Blocking for a permit here would deadlock: this is called from listing tasks which
+         * hold permits themselves, so a sufficiently wide directory tree would end up with all
+         * permits held by tasks waiting for permits (GitHub issue #8062).
+         * <p>
+         * The task is added to running immediately so that the transition to directory
+         * processing waits for queued listings as well.
+         */
+        @Override
+        void submitAsync() {
+            synchronized (running) {
+                if (jobTarget.isTerminated()) {
+                    return;
+                }
+
+                running.put(seqNo, this);
+                LOGGER.debug("{} - submitAsync (queued) {}, task count is now {}.", ruid, seqNo,
+                      running.size());
+            }
+
+            dirListThrottle.submit(this::launch);
+        }
+
+        /**
+         * Called by the throttle holding a permit for this task.
+         */
+        private void launch() {
+            permitHolder.permitGranted();
+
+            RejectedExecutionException rejected = null;
+            synchronized (running) {
+                if (!jobTarget.isTerminated() && running.containsKey(seqNo)) {
+                    try {
+                        taskFuture = taskExecutor.submit(this);
+                        return;
+                    } catch (RejectedExecutionException e) {
+                        rejected = e;
+                    }
+                }
+            }
+
+            if (rejected != null) {
+                /*
+                 *  Fail fast rather than silently skipping this subtree.
+                 */
+                LOGGER.error("{} - could not launch listing of {}: {}.", ruid, path,
+                      rejected.toString());
+                containerState = ContainerState.STOP;
+                jobTarget.setErrorObject(rejected);
+                update();
+            }
+
+            /*
+             * Cancelled while queued (or rejected): return the permit.
+             */
+            remove();
         }
 
         void doInner() {
@@ -703,7 +779,7 @@ public final class BulkRequestContainerJob
     private ExecutorService executor;
     private ExecutorService listExecutor;
     private ExecutorService callbackExecutor;
-    private Semaphore dirListSemaphore;
+    private BulkTaskThrottle dirListThrottle;
     private Semaphore inFlightSemaphore;
 
     private volatile ContainerState containerState;
@@ -882,8 +958,8 @@ public final class BulkRequestContainerJob
         }
     }
 
-    public void setDirListSemaphore(Semaphore dirListSemaphore) {
-        this.dirListSemaphore = dirListSemaphore;
+    public void setDirListThrottle(BulkTaskThrottle dirListThrottle) {
+        this.dirListThrottle = dirListThrottle;
     }
 
     public void setInFlightSemaphore(Semaphore inFlightSemaphore) {
