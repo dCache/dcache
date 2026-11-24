@@ -389,11 +389,12 @@ The files on the source pool will not be altered. Any file copied to one of the 
 >
 > File hopping has been removed from dCache. This includes the pool properties
 > `pool.destination.replicate` and `pool.destination.replicate.ip`, the
-> `hoppingmanager` service, the pool admin command `set replication` and the
-> `PoolManager` admin command `replicate`. The two pool properties are marked
-> obsolete: dCache logs a warning if they are still set, but otherwise ignores
-> them. A layout file that still contains a `hoppingmanager` service must be
-> updated, as the service no longer exists.
+> `hoppingmanager` service with its `hoppingmanager.*` properties, the pool
+> admin command `set replication` and the `PoolManager` admin command
+> `replicate`. All of these properties are marked obsolete: `dcache check-config`
+> and domain startup log a warning if they are still set, but otherwise the
+> values are ignored. A layout file that still contains a `hoppingmanager`
+> service must be updated, as the service no longer exists.
 
 File hopping copied a file to another pool as soon as it arrived on a pool,
 either written by a client or restored from tape. The same result is achieved
@@ -403,8 +404,8 @@ it is saved.
 
 #### Migrating a configuration
 
-1.  Remove `pool.destination.replicate` and `pool.destination.replicate.ip`
-    from `dcache.conf` and the layout files.
+1.  Remove `pool.destination.replicate`, `pool.destination.replicate.ip` and
+    any `hoppingmanager.*` properties from `dcache.conf` and the layout files.
 
 2.  Remove the `hoppingmanager` service from the layout file. The rules in
     `/var/lib/dcache/config/HoppingManager.conf` are no longer read; use them
