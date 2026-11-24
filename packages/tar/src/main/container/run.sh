@@ -28,6 +28,9 @@ export CLASSPATH
 # we hope that there is only one agent file and it the right one
 ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 
+# The JaCoCo agent must come before the AspectJ agent, so that JaCoCo instruments
+# the compiled classes rather than the woven ones. Otherwise the execution data of
+# woven classes does not match the compiled classes used for the coverage report.
 JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
 JACOCO_AGENT=""
 
@@ -62,6 +65,7 @@ exec /usr/bin/java \
 	-Djavax.security.auth.useSubjectCredsOnly=false \
 	-XX:+HeapDumpOnOutOfMemoryError \
 	-XX:HeapDumpPath=${DCACHE_INSTALL_DIR}/var/log/${DOMAIN}-oom.hprof \
+	${JACOCO_AGENT} \
 	-javaagent:${ASPECT_AGENT} \
 	-Djava.awt.headless=true -DwantLog4jSetup=n \
 	-Ddcache.home=${DCACHE_HOME} \
@@ -77,6 +81,5 @@ exec /usr/bin/java \
 	--add-opens=java.sql/java.sql=ALL-UNNAMED  \
 	--add-opens=java.base/java.math=ALL-UNNAMED \
 	--add-opens=java.base/sun.nio.fs=ALL-UNNAMED \
-	${JACOCO_AGENT} \
 	${JAVA_ARGS} \
 	org.dcache.boot.BootLoader start ${DOMAIN}
