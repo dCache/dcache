@@ -685,8 +685,8 @@ Extract Coverage:
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
     - |
       for POD in $PODS; do
-        echo "Collecting coverage and woven classes from $POD..."
-        mkdir -p "./integration-results/classes-dump/${POD}"
+        echo "Collecting coverage from $POD..."
+        mkdir -p ./integration-results
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
         POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
         if kubectl -n $K8S_NAMESPACE exec $POD -- \
@@ -694,13 +694,6 @@ Extract Coverage:
             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
       
           kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
-      
-          echo "Pulling woven classes from $POD..."
-          if kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
-            echo "Successfully collected woven classes from $POD"
-          else
-            echo "Warning: Could not find dumped classes on $POD"
-          fi
         else
           echo "Failed to dump coverage from $POD"
         fi
@@ -708,7 +701,6 @@ Extract Coverage:
   artifacts:
     paths:
       - integration-results/*.exec
-      - integration-results/classes-dump/
     when: always
 
 Grid EL9 WN tests:

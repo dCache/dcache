@@ -45,10 +45,8 @@ JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.globus.gsi.gssapi.jaas.GlobusPrincipal"
 JACOCO_INCLUDES="${JACOCO_INCLUDES}:org.globus.gsi.gssapi.jaas.SimplePrincipal"
 
 if [ "${JACOCO_ENABLED}" = "true" ] && [ -s "$JACOCO_AGENT_JAR" ]; then
-    CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
-    mkdir -p "$CLASS_DUMP_DIR"
     _opts="${JACOCO_OPTS:-output=tcpserver,address=*,port=6300,append=false}"
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},includes=${JACOCO_INCLUDES},classdumpdir=${CLASS_DUMP_DIR}"
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},includes=${JACOCO_INCLUDES}"
     echo "JaCoCo enabled: ${_opts}"
 else
     echo "JaCoCo disabled."

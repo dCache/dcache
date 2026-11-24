@@ -7,7 +7,6 @@ JACOCO_DIR="${PROJECT_ROOT}/jacoco-$JACOCO_VERSION"
 JACOCO_CLI_JAR="$JACOCO_DIR/lib/jacococli.jar"
 MERGED_EXEC="$PROJECT_ROOT/target/coverage-reports/merged.exec"
 REPORT_DIR="$PROJECT_ROOT/target/coverage-reports/site"
-DUMP_DIR="${PROJECT_ROOT}/integration-results/classes-dump"
 FINAL_CLASSES_DIR="${PROJECT_ROOT}/target/coverage-reports/classes"
 
 if [ ! -f "$JACOCO_CLI_JAR" ]; then
@@ -31,6 +30,8 @@ echo "Merging ${#EXEC_FILES[@]} execution data files..."
 java -jar "$JACOCO_CLI_JAR" merge "${EXEC_FILES[@]}" --destfile "$MERGED_EXEC"
 
 #Collect compiled classes
+#Unit and integration test data both match these classes, as the tar build that
+#runs in the pods compiles the same bytes.
 
 echo "Collecting compiled classes from modules..."
 SOURCEFILES_ARGS=()
@@ -53,49 +54,6 @@ do
         rm -rf "$target"
     fi
 done
-
-#Overlay woven classes from pods
-
-if [ -d "$DUMP_DIR" ]; then
-    echo "Overlaying woven classes from pod dumps..."
-
-    declare -A WOVEN_LOOKUP
-
-    while IFS= read -r -d '' woven_file; do
-        filename=$(basename "$woven_file")
-
-        #Skip AspectJ synthetic classes
-        if echo "$filename" | grep -qE '^\.[0-9a-f]{8,}\.class$|^AjcClosure[0-9].*\.class$'; then
-            continue
-        fi
-        #Strip hash suffix if present
-        clean_name=$(echo "$filename" | sed -E 's/\.[0-9a-f]{8,}\.class$/.class/')
-
-        #Relative path within the pods dump subdir
-        rel_dir=$(dirname "$woven_file" | sed -E "s|.*classes-dump/[^/]+/||")
-        key="${rel_dir}/${clean_name}"
-
-        #First pod wins, should be identical for the same class version
-        [ -z "${WOVEN_LOOKUP[$key]+x}" ] && WOVEN_LOOKUP[$key]="$woven_file"
-
-    done < <(find "$DUMP_DIR" -name "*.class" -print0)
-
-    REPLACED=0
-    SKIPPED=0
-    for compiled_file in $(find "$FINAL_CLASSES_DIR" -name "*.class"); do
-        rel="${compiled_file#$FINAL_CLASSES_DIR/}"
-        if [ -n "${WOVEN_LOOKUP[$rel]+x}" ]; then
-            cp "${WOVEN_LOOKUP[$rel]}" "$compiled_file"
-            (( REPLACED++ )) || true
-        else
-            (( SKIPPED++ )) || true
-        fi
-    done
-
-    echo "  Woven overlay: $REPLACED classes replaced, $SKIPPED kept as compiled"
-else
-    echo "Warning: No pod dump directory found at $DUMP_DIR — integration coverage will show mismatches"
-fi
 
 #Generate report
 
