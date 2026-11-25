@@ -79,7 +79,9 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - **Clean:** `mvn clean`
 - **Java Version:** Java 21 or newer is required (up to 25)
 - **Key Libraries (qualitative):**
-  - **Spring Framework** — XML-based configuration (NOT Spring Boot). Use `@Required`, `@PostConstruct`, `@PreDestroy`.
+  - **Spring Framework 6.2** — XML-based configuration (NOT Spring Boot). Use `org.dcache.util.spring.Required`, `jakarta.annotation.PostConstruct`, `jakarta.annotation.PreDestroy`.
+  - **Jakarta EE 11** — Jakarta EE APIs use the `jakarta.*` packages (`jakarta.servlet`, `jakarta.ws.rs`, `jakarta.inject`, `jakarta.annotation`), never their `javax.*` names. JDK packages (e.g. `javax.security.auth`) and JSR 305 `javax.annotation.concurrent` are unchanged.
+  - **Jetty 12.1 (`ee11`, Servlet 6.1)** — HTTP doors (webdav, frontend, httpd, s3); each door is one servlet context made of servlets and filters.
   - **Guava** — used extensively for `ListenableFuture`, `Futures`, collections utilities.
   - **Netty** — used for pool movers and protocol doors.
   - **JUnit 4** is the primary test framework; some newer tests use JUnit 5.
@@ -102,9 +104,10 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - **MUST** use `@GuardedBy` annotations (from `javax.annotation.concurrent`) to document lock usage.
   - Prefer `java.util.concurrent` utilities over raw threads.
 - **Configuration (Spring XML + `@Required`):**
-  - dCache uses **Spring 5 XML configuration** (not Spring Boot / `@SpringBootApplication`).
-  - Bean wiring is done via XML; setter injection is common with `@Required` annotations (611+ usages).
-  - `@PostConstruct` / `@PreDestroy` are used for lifecycle hooks.
+  - dCache uses **Spring 6 XML configuration** (not Spring Boot / `@SpringBootApplication`).
+  - Bean wiring is done via XML; setter injection is common with `@Required` annotations (550+ usages).
+  - Spring 6 has no `@Required`: use dCache's `org.dcache.util.spring.Required`. `RequiredPropertyChecker`, registered by `UniversalSpringCell`, fails the cell at startup when such a property is not set in the XML. Do not put it on setters of `*Aware` interfaces (e.g. `EnvironmentAware`), which are called after the check.
+  - `@PostConstruct` / `@PreDestroy` (from `jakarta.annotation`) are used for lifecycle hooks.
   - `AbstractCell` supports `@Option`-annotated fields for command-line style option parsing at cell startup.
 - **Message Dispatch Pattern:**
   - Cells implement `CellMessageReceiver` and expose `messageArrived(SomeSpecificMessage msg)` methods.
@@ -137,9 +140,9 @@ You are an expert developer working on **dCache**, a distributed storage system 
 ## 🔗 Integration & Dependencies
 
 - **Database (Chimera):** Chimera uses **Spring JDBC** (`JdbcTemplate` / `NamedParameterJdbcTemplate`) — NOT DataNucleus/JDO. The main class is `org.dcache.chimera.JdbcFs` with SQL drivers like `FsSqlDriver`.
-- **REST API:** The frontend uses **JAX-RS (Jersey)**, not Spring MVC. Resources live in `org.dcache.restful.resources`. The app is `DcacheRestApplication`.
+- **REST API:** The frontend uses **JAX-RS 4 (Jersey 4, `jakarta.ws.rs`)**, not Spring MVC. The API is described with OpenAPI 3 (swagger-core `io.swagger.v3.oas.annotations`, served at `/api/v1/openapi.json`). Resources live in `org.dcache.restful.resources`. The app is `DcacheRestApplication`.
 - **Coordination:** Apache Curator / ZooKeeper is used for distributed coordination.
-- **Configuration:** Spring 5 XML beans; `@Required` for mandatory setter injection; `@PostConstruct`/`@PreDestroy` for lifecycle.
+- **Configuration:** Spring 6 XML beans; `org.dcache.util.spring.Required` for mandatory setter injection; `jakarta.annotation.PostConstruct`/`PreDestroy` for lifecycle.
 
 ## 💡 Tips for AI Agents
 
