@@ -71,6 +71,10 @@
       <property name="subscriber" ref="pool-manager-handler-subscriber"/>
   </bean>
 
+  <bean id="change-set-store" class="org.dcache.restful.util.changeset.ChangeSetStore">
+      <description>Stores change sets in ZooKeeper</description>
+  </bean>
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool communication stub</description>
     <property name="timeout" value="${frontend.service.pool.timeout}"/>
