@@ -62,7 +62,6 @@ package org.dcache.restful.resources.selection;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import diskCacheV111.poolManager.PoolSelectionUnit.UnitType;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -205,7 +204,7 @@ public final class UnitResources {
         SelectionNames.checkValidUnitName(unit);
 
         return psuAdminCommands.execute("Unit: " + unit + " was removed", Response.Status.OK,
-                "psu remove unit " + unit + netOption(unit));
+                "psu remove unit " + unit);
     }
 
     @POST
@@ -261,7 +260,7 @@ public final class UnitResources {
         SelectionNames.checkValidUnitName(unit);
 
         return psuAdminCommands.execute("Unit: " + unit + " was added to unit group: " + group,
-                Response.Status.OK, "psu addto ugroup " + group + " " + unit + netOption(unit));
+                Response.Status.OK, "psu addto ugroup " + group + " " + unit);
     }
 
     @DELETE
@@ -288,16 +287,6 @@ public final class UnitResources {
         return psuAdminCommands.execute(
                 "Unit: " + unit + " was removed from unit group: " + group,
                 Response.Status.OK,
-                "psu removefrom ugroup " + group + " " + unit + netOption(unit));
-    }
-
-    /**
-     * psu commands on net units require the '-net' option, so that the unit is looked up as
-     * an address/subnet instead of by its name.
-     */
-    private String netOption(String unit) {
-        SelectionUnit selectionUnit = poolMonitor.getPoolSelectionUnit()
-                .getSelectionUnits().get(unit);
-        return selectionUnit != null && selectionUnit.getType() == UnitType.NET ? " -net" : "";
+                "psu removefrom ugroup " + group + " " + unit);
     }
 }
