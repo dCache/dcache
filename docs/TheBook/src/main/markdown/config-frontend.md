@@ -18,11 +18,26 @@ Once the service is running, the REST API documentation can be viewed at:
 
     https://example.org:3880/api/v1
 
+The page shown there is the Swagger UI, an interactive view of the frontend's
+OpenAPI 3 description of the API.  That description is also available in
+machine-readable form, which is useful for generating clients or driving
+tooling:
+
+    https://example.org:3880/api/v1/openapi.json
+    https://example.org:3880/api/v1/openapi.yaml
+
 The Swagger documentation provides a list of available REST endpoints with full descriptions of
-the methods and their data types.These methods range over namespace access, allowing users
+the methods and their data types.  These methods range over namespace access, allowing users
 to view files and directories, monitoring data for the dCache system, and
 event subscription. Each path also provides example `curl` commands, example responses
 and error code descriptions. As well as the ability to test API calls directly from the browser.
+
+> **NOTE**
+>
+> Earlier dCache versions used Swagger 2.0 and served the description at
+> `/api/v1/swagger.json`.  That URL no longer exists: any script or tool that
+> reads it must use `/api/v1/openapi.json` instead.  The operation paths and
+> the resources they describe are unchanged by this switch.
 
 ## Configuring the Frontend service
 
