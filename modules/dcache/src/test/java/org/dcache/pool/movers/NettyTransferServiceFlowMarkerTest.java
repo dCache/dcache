@@ -3,6 +3,7 @@ package org.dcache.pool.movers;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -13,10 +14,13 @@ import io.netty.channel.local.LocalAddress;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.security.auth.Subject;
+import org.dcache.pool.movers.TransferLifeCycle.DataDirection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,7 +87,18 @@ public class NettyTransferServiceFlowMarkerTest {
         channel.connected(CLIENT_DATA_CONNECTION, POOL_DATA_CONNECTION);
 
         verify(transferLifeCycle).onStart(CLIENT_DATA_CONNECTION, POOL_DATA_CONNECTION,
-              protocolInfo, subject);
+              DataDirection.OUTBOUND, protocolInfo, subject);
+    }
+
+    @Test
+    public void shouldReportUploadAsInbound() {
+        doReturn(Set.of(StandardOpenOption.READ, StandardOpenOption.WRITE))
+              .when(mover).getIoMode();
+
+        channel.connected(CLIENT_DATA_CONNECTION, POOL_DATA_CONNECTION);
+
+        verify(transferLifeCycle).onStart(CLIENT_DATA_CONNECTION, POOL_DATA_CONNECTION,
+              DataDirection.INBOUND, protocolInfo, subject);
     }
 
     @Test
@@ -96,7 +111,7 @@ public class NettyTransferServiceFlowMarkerTest {
 
     @Test
     public void shouldNotSendStartMarkerBeforeClientConnects() {
-        verify(transferLifeCycle, never()).onStart(any(), any(), any(), any());
+        verify(transferLifeCycle, never()).onStart(any(), any(), any(), any(), any());
         verify(mover, never()).setRemoteEndpoint(any());
     }
 
@@ -106,7 +121,7 @@ public class NettyTransferServiceFlowMarkerTest {
         channel.connected(CLIENT_DATA_CONNECTION, POOL_DATA_CONNECTION);
         channel.connected(new InetSocketAddress("203.0.113.20", 50000), POOL_DATA_CONNECTION);
 
-        verify(transferLifeCycle, times(1)).onStart(any(), any(), any(), any());
+        verify(transferLifeCycle, times(1)).onStart(any(), any(), any(), any(), any());
         verify(mover, times(1)).setRemoteEndpoint(CLIENT_DATA_CONNECTION);
     }
 
@@ -114,7 +129,7 @@ public class NettyTransferServiceFlowMarkerTest {
     public void shouldIgnoreConnectionsThatAreNotIpSockets() {
         channel.connected(new LocalAddress("client"), new LocalAddress("pool"));
 
-        verify(transferLifeCycle, never()).onStart(any(), any(), any(), any());
+        verify(transferLifeCycle, never()).onStart(any(), any(), any(), any(), any());
         verify(mover, never()).setRemoteEndpoint(any());
     }
 

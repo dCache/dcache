@@ -252,10 +252,15 @@ Current invocation is from:
 
 - `modules/dcache/src/main/java/org/dcache/pool/movers/NettyTransferService.java`
 
-`NettyTransferService.executeMover(...)` calls `transferLifeCycle.onStart(...)` with:
+When a client connects to the mover, `NettyTransferService` calls
+`transferLifeCycle.onStart(...)` with:
 
-- source = remote endpoint from `IpProtocolInfo.getSocketAddress()`
-- destination = local pool endpoint chosen for mover
+- the remote endpoint of that connection,
+- the pool's endpoint of that connection,
+- the direction of the data: inbound if the mover writes the file, outbound if it reads it.
+
+`TransferLifeCycle` turns these into the source and destination of the flow (see
+"Source and destination" below).
 
 ### End marker invocation path
 
@@ -265,8 +270,9 @@ Current invocation is from:
 
 `DefaultPostTransferService.sendFinished(...)`:
 
-- uses `((IpProtocolInfo) mover.getProtocolInfo()).getSocketAddress()` as source,
-- uses `mover.getLocalEndpoint()` as destination when available,
+- uses the mover's remote endpoint, or else
+  `((IpProtocolInfo) mover.getProtocolInfo()).getSocketAddress()`, as the remote endpoint,
+- uses `mover.getLocalEndpoint()` as the local endpoint when available,
 - otherwise tries `deriveLocalEndpoint(remoteEndpoint)` via `NetworkUtils.getLocalAddress(...)`,
 - calls `transferLifeCycle.onEnd(...)` when either direct or derived local endpoint is available,
 - logs structured skip reasons when end-marker invocation cannot proceed.
@@ -353,11 +359,35 @@ Marker wire format:
 Main JSON sections:
 
 - `version`
+- `dcache-version`, the dCache release that sent the firefly
 - `flow-lifecycle` with `state`, `start-time`, optional `end-time`, `current-time`
 - `flow-id` with AFI, IPs, ports, and protocol
 - `context` with `experiment-id`, `activity-id`, and application/protocol name
 - `usage` (`received`, `sent`)
 - optional `storage-stats` when `pool.firefly.storage-statistics=true`
+
+### Source and destination
+
+The source of the flow is the supplier of the data, as in XRootD's fireflies:
+
+| Transfer | `src` | `dst` |
+|----------|-------|-------|
+| Upload, third-party pull | remote party | dCache node (pool or door) |
+| Download, third-party push | dCache node (pool or door) | remote party |
+
+Both ends of a transfer between two dCache instances therefore report the same `flow-id`.
+
+`usage` is counted from the side of the source: `sent` is the number of bytes the source sent
+to the destination, that is the data of the transfer, and `received` is the number of bytes it
+received from the destination.
+
+Independently of the direction, the firefly is sent to the remote party, the syslog header
+carries the host name of the dCache node, and the excludes apply when both the remote and
+the local address are inside the configured subnets.
+
+Earlier dCache versions always reported the remote party as `src` and the dCache node as
+`dst`, and counted `usage` from the side of the dCache node. `dcache-version` is absent from
+their fireflies, which lets a consumer tell the two conventions apart.
 
 For end markers sent by a pool, `end-time` is the time the transfer finished and
 `start-time` is derived as `end-time - max(connectionTime, 0)`.
