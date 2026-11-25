@@ -48,6 +48,8 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.macaroons.InvalidMacaroonException;
+import org.dcache.macaroons.MacaroonRevocationList;
 import org.dcache.util.CertificateFactories;
 import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
@@ -79,6 +81,7 @@ public class AuthenticationFilter implements Filter {
     private boolean _isSpnegoAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
     private boolean _acceptBearerTokenUnencrypted;
+    private MacaroonRevocationList _revocationList;
     private Set<String> _anonymousAccessiblePaths = Set.of();
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
@@ -302,9 +305,10 @@ public class AuthenticationFilter implements Filter {
                       "not allowed to send pre-authorized URL unencrypted");
             }
             Set<Object> credentials = subject.getPrivateCredentials();
-            Arrays.stream(bearerTokens)
-                  .map(BearerTokenCredential::new)
-                  .forEach(credentials::add);
+            for (String token : bearerTokens) {
+                checkMacaroonNotRevoked(token);
+                credentials.add(new BearerTokenCredential(token));
+            }
         }
     }
 
@@ -392,6 +396,8 @@ public class AuthenticationFilter implements Filter {
                               "not allowed to send bearer token unencrypted");
                     }
 
+                    checkMacaroonNotRevoked(info.getData());
+
                     try {
                         subject.getPrivateCredentials()
                               .add(new BearerTokenCredential(info.getData()));
@@ -438,6 +444,32 @@ public class AuthenticationFilter implements Filter {
 
     public void setAcceptBearerTokenUnencrypted(boolean value) {
         _acceptBearerTokenUnencrypted = value;
+    }
+
+    /**
+     * Optional list of revoked macaroons. When set, bearer tokens are checked
+     * against this list before any login caching is consulted, so revocation
+     * takes effect immediately.
+     */
+    public void setRevocationList(MacaroonRevocationList list) {
+        _revocationList = list;
+    }
+
+    private void checkMacaroonNotRevoked(String token)
+          throws PermissionDeniedCacheException {
+        if (_revocationList == null) {
+            return;
+        }
+        String signature;
+        try {
+            signature = MacaroonRevocationList.signatureOf(token);
+        } catch (InvalidMacaroonException e) {
+            // Not a macaroon we can interpret: leave it to the login stage to reject.
+            return;
+        }
+        if (_revocationList.isRevoked(signature)) {
+            throw new PermissionDeniedCacheException("Macaroon has been revoked");
+        }
     }
 
     /**
