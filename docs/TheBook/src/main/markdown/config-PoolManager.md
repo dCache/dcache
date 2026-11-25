@@ -861,6 +861,51 @@ To set the space cost factor on the `default` partition to `0.3`, use the follow
 
                                                  The default value is `500`.                                                                                                                                                                                                                                                                                              | integer |
 
+## Rebalancing a pool group
+
+Over time the pools in a pool group can fill unevenly, for example after new, empty pools join the group. The `rebalance pgroup` command moves files between the pools of one pool group until their space usage is about equal. It is a command of the PoolManager cell. It does not move files itself. It submits a [migration job](cookbook-pool.md#migration-module) named `rebalance` to each enabled pool of the group, and the pools do the work.
+
+    (local) admin > \c PoolManager
+    (PoolManager) admin > rebalance pgroup [-metric=relative|free] [-refresh=<seconds>] <poolGroup>
+
+-   `<poolGroup>`: The name of the pool group to balance.
+
+-   `-metric=relative|free`: Defines what "balanced" means. The default is `relative`.
+
+    -   `relative`: every pool ends up with about the same fraction of used space, for example 30% on each pool. Pools of different sizes keep different amounts of free space: larger pools have more free space.
+    -   `free`: every pool ends up with about the same amount of free space. Larger pools then store a larger share of the files.
+
+    If all pools in the group have the same capacity, both metrics give the same result.
+
+-   `-refresh=<seconds>`: How often, in seconds, the migration jobs ask the PoolManager for the current space usage of the pools. The default is `30`.
+
+On success the command lists the pools that received a job:
+
+    (PoolManager) admin > rebalance pgroup -metric=relative my-pools
+    Rebalancing jobs have been submitted to pool-1, pool-2, pool-3.
+
+Only pools that are enabled and have reported their space information to the PoolManager take part. Disabled pools, and pools the PoolManager has no cost information for, are skipped without a message. If the command fails on any pool, the jobs it already started are cancelled and the command reports the error.
+
+### Behaviour to be aware of
+
+- **One run per pool.** A pool can be the source of only one rebalance run at a time. Starting `rebalance pgroup` cancels the earlier `rebalance` jobs on the pools of the group.
+- **Overshoot.** The jobs learn the new space usage only at each refresh, so the final balance overshoots the target slightly. The effect is largest on small pools, such as those of a test instance. Use a smaller `-refresh` value to reduce it.
+- **No persistence.** The PoolManager keeps no state about a rebalance run, and the jobs do not survive a pool restart. If a pool restarts, run the command again.
+- **Changing data.** If many files are written, deleted or moved while the jobs run, the group may not be fully balanced when they end. Run the command again to improve the balance.
+
+To follow the progress of a rebalance run, log in to a pool and list its migration jobs:
+
+    (local) admin > \c pool-1
+    (pool-1) admin > migration ls
+
+### Stopping a rebalance run
+
+To cancel the `rebalance` jobs on all pools of a pool group, use:
+
+    (PoolManager) admin > rebalance cancel pgroup <poolGroup>
+
+The command replies with the number of pools on which it cancelled jobs, for example `Cancelled rebalancing on 3 pools.`
+
 ## Link Groups
 
 The PoolManager supports a type of objects called link groups. These link groups are used by the [spacemanager](config-spacemanager.md) to make reservations against space. Each link group corresponds to a number of dCache pools in the following way: A link group is a collection of [links](#links) and each link points to a set of pools. Each link group knows about the size of its available space, which is the sum of all sizes of available space in all the pools included in this link group.

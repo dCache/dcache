@@ -95,6 +95,7 @@ Individual services:
      - [Managing Partitions](config-PoolManager.md#managing-partitions)
      - [Using Partitions](config-PoolManager.md#using-partitions)
      - [Classic Partitions](config-PoolManager.md#classic-partitions)
+     - [Rebalancing a Pool Group](config-PoolManager.md#rebalancing-a-pool-group)
      - [Link Groups](config-PoolManager.md#link-groups)
 
 - [The Resilience Service](config-resilience.md)
