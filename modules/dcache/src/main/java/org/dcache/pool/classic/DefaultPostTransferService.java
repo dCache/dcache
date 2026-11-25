@@ -169,6 +169,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setP2P(mover.isPoolToPoolTransfer());
         info.setFileSize(fileSize);
         info.setResult(mover.getErrorCode(), mover.getErrorMessage());
+        info.setTimeQueued(mover.getQueueTime());
         info.setTransferAttributes(mover.getBytesTransferred(),
               mover.getTransferTime(),
               mover.getProtocolInfo());

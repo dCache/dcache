@@ -40,6 +40,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
@@ -86,6 +87,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
 
     private volatile InetSocketAddress _localEndpoint;
     private volatile InetSocketAddress _remoteEndpoint;
+
+    /**
+     * The mover is created when the request is added to the mover queue and executed when the
+     * queue grants it a slot; the time between the two is the time spent queued.
+     */
+    private final long _createdAt = System.nanoTime();
+    private volatile long _queueTime;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
           TransferService<M> transferService) {
@@ -228,7 +236,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
+    public long getQueueTime() {
+        return _queueTime;
+    }
+
+    @Override
     public Cancellable execute(CompletionHandler<Void, Void> completionHandler) {
+        _queueTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - _createdAt);
         return new TryCatchTemplate<Void, Void>(completionHandler) {
             @Override
             @SuppressWarnings("unchecked")

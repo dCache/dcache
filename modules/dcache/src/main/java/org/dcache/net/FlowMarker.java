@@ -147,6 +147,11 @@ public class FlowMarker {
             stats.put("read-idle", message.getReadIdle().isPresent() ? message.getReadIdle().get().toString() : "0");  
             stats.put("write-active", message.getWriteActive().isPresent() ? message.getWriteActive().get().toString() : "0");  
             stats.put("write-idle", message.getWriteIdle().isPresent() ? message.getWriteIdle().get().toString() : "0");
+            stats.put("result-code", message.getResultCode());
+            stats.put("file-size", message.getFileSize());
+            stats.put("io-mode", message.isFileCreated() ? "write" : "read");
+            stats.put("queue-time", message.getTimeQueued());
+            stats.put("pool-name", message.getCellAddress().getCellName());
             return this;
         }
 
