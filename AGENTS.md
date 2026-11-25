@@ -158,6 +158,18 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - **Fix compilation errors immediately** before moving to other files.
   - **Run tests:** After compilation succeeds, run the relevant test class.
   - **Check test failures carefully:** Test failures often reveal incorrect assumptions about APIs.
+  - Plans live in `docs/plans/YYYYMMDD-<topic>.md`, untracked. Keep a "Status / Resume here"
+    section (commit ids, next step, build/test commands) and record design changes as numbered deviations.
+
+## Git Guidelines
+
+  - Never work on master or main branches. Always ask user to create a new branch.
+  - Never push
+  - If committing, write short commit messages matching project style (such as  title / Motivation / Modification / Result ) using KISS principle
+  - Never commit plan/brainstorm files (`docs/plans/*.md`). Stage explicit paths, never `git add -A` / `git add .`.
+  - Commit only when asked, one step per commit.
+  - A fix for an unpushed commit on the feature branch: propose a fixup + autosquash into the
+    commit that introduced the problem rather than a new commit.
 
 ## 🔧 File Editing Best Practices
 
