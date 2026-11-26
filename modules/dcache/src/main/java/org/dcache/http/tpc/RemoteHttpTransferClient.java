@@ -98,6 +98,10 @@ public class RemoteHttpTransferClient {
 
     /**
      * Receives the body of a successful GET response.
+     * <p>
+     * If the body cannot be received, the receiver should throw without closing the entity's
+     * content stream and without using {@link HttpEntity#writeTo}: both read the remaining body
+     * to its end.  The connection is then shut down instead.
      */
     @FunctionalInterface
     public interface BodyReceiver {
@@ -287,7 +291,14 @@ public class RemoteHttpTransferClient {
                       && response.getStatusLine().getStatusCode() < 300 && length > -1) {
                     _expectedTransferSize = length;
                 }
-                receiver.receive(entity);
+                try {
+                    receiver.receive(entity);
+                } catch (IOException | InterruptedException | RuntimeException e) {
+                    // Shut down the connection, so that the rest of the body is not read
+                    // and the connection is not reused.
+                    abortCurrentRequest();
+                    throw e;
+                }
             } catch (SocketTimeoutException e) {
                 String message = "socket timeout on GET (received "
                       + describeSize(progress.getBytesTransferred()) + " of data; "
@@ -361,6 +372,10 @@ public class RemoteHttpTransferClient {
      */
     public void abort() {
         _aborted = true;
+        abortCurrentRequest();
+    }
+
+    private void abortCurrentRequest() {
         HttpUriRequest request = _currentRequest;
         if (request != null) {
             request.abort();
