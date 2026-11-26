@@ -38,6 +38,8 @@ public class MacaroonProcessor {
 
     private SecretHandler _secretHandler;
 
+    private MacaroonRevocationList _revocationList;
+
     class CaveatMacaroonsBuilder extends MacaroonsBuilder {
 
         CaveatMacaroonsBuilder(String location, byte[] secretKey, String identifier) {
@@ -75,6 +77,14 @@ public class MacaroonProcessor {
     @Required
     public void setSecretHandler(SecretHandler supplier) {
         _secretHandler = supplier;
+    }
+
+    /**
+     * Provide the list of revoked macaroons.  Without it, no macaroon is ever rejected as
+     * revoked.
+     */
+    public void setRevocationList(MacaroonRevocationList list) {
+        _revocationList = list;
     }
 
     private IdentifiedSecret newSecret() {
@@ -160,6 +170,14 @@ public class MacaroonProcessor {
         }
 
         MacaroonContext context = contextExtractor.getContext();
+        if (_revocationList != null && _revocationList.isRevoked(macaroon.signature)) {
+            // The macaroon is authentic but has been revoked by an admin (typically after the
+            // token leaked); 'signature' is lowercase hex, as used by buildId.
+            context.setSignature(macaroon.signature);
+            throw new InvalidMacaroonException("Macaroon [" + context.getId()
+                  + "] has been revoked.");
+        }
+
         context.setSignature(macaroon.signature);
         return context;
     }

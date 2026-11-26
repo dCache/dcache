@@ -773,6 +773,27 @@
     </bean>
 
     <beans profile="macaroons-true">
+        <bean id="macaroon-revocation-list" class="org.dcache.macaroons.MacaroonRevocationList">
+            <description>List of revoked macaroons</description>
+            <!-- Revocation entries may be dropped once older than the longest
+                 lifetime any door can mint plus the expired-secret removal period:
+                 a token revoked before then can no longer authenticate anyway.
+                 Set pruneAfter to 0 to disable pruning. -->
+            <property name="pruneAfter"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${dcache.macaroons.max-lifetime}, '${dcache.macaroons.max-lifetime.unit}')
+                      + T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${dcache.macaroons.expired-removal-period}, '${dcache.macaroons.expired-removal-period.unit}')}"/>
+        </bean>
+
+        <!-- Reject revoked tokens in the HTTP authentication handler, before the
+             (token-keyed) cached login strategy can short-circuit re-verification. -->
+        <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+            <property name="targetObject" ref="authentication-filter"/>
+            <property name="targetMethod" value="setRevocationList"/>
+            <property name="arguments">
+                <list><ref bean="macaroon-revocation-list"/></list>
+            </property>
+        </bean>
+
         <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">
             <description>Facade for handling macaroon creation and verification</description>
             <property name="secretHandler">
@@ -788,6 +809,7 @@
                               value="${frontend.macaroons.expired-removal-period.unit}"/>
                 </bean>
             </property>
+            <property name="revocationList" ref="macaroon-revocation-list"/>
         </bean>
 
         <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
