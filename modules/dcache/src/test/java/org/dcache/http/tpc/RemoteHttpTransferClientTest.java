@@ -22,6 +22,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -44,6 +46,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -57,6 +60,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.client.methods.HttpRequestWrapper;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -615,6 +622,103 @@ public class RemoteHttpTransferClientTest {
         assertThat(download.isAlive(), equalTo(false));
         assertThat(failure.get() instanceof ThirdPartyTransferFailedCacheException,
               equalTo(true));
+    }
+
+    /**
+     * A client that records the requests it executes, so that tests can see whether a request was
+     * aborted.
+     */
+    private CloseableHttpClient clientRecording(List<HttpRequest> executed) {
+        return HttpClients.custom()
+              .addInterceptorFirst((HttpRequestInterceptor) (request, context) ->
+                    executed.add(((HttpRequestWrapper) request).getOriginal()))
+              .build();
+    }
+
+    private void sendPartOfLargeBody(CountDownLatch release) {
+        handle("/large", e -> {
+            e.sendResponseHeaders(200, 1_000_000);
+            e.getResponseBody().write(DATA);
+            e.getResponseBody().flush();
+            release.await(30, TimeUnit.SECONDS);
+        });
+    }
+
+    @Test
+    public void shouldAbortRequestWhenReceiverFails() throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        sendPartOfLargeBody(release);
+        List<HttpRequest> executed = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger received = new AtomicInteger();
+
+        try (CloseableHttpClient recording = clientRecording(executed)) {
+            RemoteHttpTransferClient transfer = new RemoteHttpTransferClient(recording,
+                  info("/large", false), connected::incrementAndGet);
+            try {
+                transfer.get(c -> {
+                }, entity -> {
+                    // Like a mover whose write fails because it was cancelled.
+                    received.set(entity.getContent().read(new byte[DATA.length]));
+                    throw new ClosedByInterruptException();
+                }, NO_PROGRESS, l -> {
+                });
+                fail("expected failure");
+            } catch (ThirdPartyTransferFailedCacheException e) {
+                assertThat(e.getCause(), instanceOf(ClosedByInterruptException.class));
+            } finally {
+                release.countDown();
+            }
+        }
+
+        assertThat(received.get(), greaterThan(0));
+        assertThat(executed.size(), equalTo(1));
+        assertThat(((HttpUriRequest) executed.get(0)).isAborted(), equalTo(true));
+    }
+
+    @Test
+    public void shouldAbortRequestWhenReceiverIsInterrupted() throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        sendPartOfLargeBody(release);
+        List<HttpRequest> executed = Collections.synchronizedList(new ArrayList<>());
+
+        try (CloseableHttpClient recording = clientRecording(executed)) {
+            RemoteHttpTransferClient transfer = new RemoteHttpTransferClient(recording,
+                  info("/large", false), connected::incrementAndGet);
+            try {
+                transfer.get(c -> {
+                }, entity -> {
+                    throw new InterruptedException();
+                }, NO_PROGRESS, l -> {
+                });
+                fail("expected failure");
+            } catch (ThirdPartyTransferFailedCacheException e) {
+                assertThat(e.getMessage(), containsString("shutting down"));
+            } finally {
+                release.countDown();
+            }
+        }
+
+        assertThat(executed.size(), equalTo(1));
+        assertThat(((HttpUriRequest) executed.get(0)).isAborted(), equalTo(true));
+    }
+
+    @Test
+    public void shouldNotAbortRequestWhenBodyIsReceived() throws Exception {
+        handle("/file", e -> respond(e, 200, DATA));
+        List<HttpRequest> executed = Collections.synchronizedList(new ArrayList<>());
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+
+        try (CloseableHttpClient recording = clientRecording(executed)) {
+            RemoteHttpTransferClient transfer = new RemoteHttpTransferClient(recording,
+                  info("/file", false), connected::incrementAndGet);
+            transfer.get(c -> {
+            }, entity -> entity.getContent().transferTo(body), NO_PROGRESS, l -> {
+            });
+        }
+
+        assertThat(body.toByteArray(), equalTo(DATA));
+        assertThat(executed.size(), equalTo(1));
+        assertThat(((HttpUriRequest) executed.get(0)).isAborted(), equalTo(false));
     }
 
     @Test

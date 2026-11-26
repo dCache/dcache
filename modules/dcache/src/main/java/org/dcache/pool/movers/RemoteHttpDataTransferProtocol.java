@@ -6,12 +6,14 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
+import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.security.auth.Subject;
+import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.dcache.http.tpc.RemoteHttpTransferClient;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -194,9 +197,19 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile() throws ThirdPartyTransferFailedCacheException {
         MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
         _transfer.get(_integrityChecker,
-              entity -> entity.writeTo(Channels.newOutputStream(channel)),
+              entity -> receiveBody(entity, Channels.newOutputStream(channel)),
               progress(),
               channel::truncate);
+    }
+
+    /**
+     * Copy the response body.  Unlike {@link HttpEntity#writeTo}, the content stream is not closed
+     * if the copy fails (e.g., because the mover was cancelled): closing it would read the rest of
+     * the body.  Instead, the connection is aborted by {@link RemoteHttpTransferClient}.
+     */
+    @VisibleForTesting
+    static void receiveBody(HttpEntity entity, OutputStream out) throws IOException {
+        entity.getContent().transferTo(out);
     }
 
     private void sendAndCheckFile(FileAttributes attributes)
