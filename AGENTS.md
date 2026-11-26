@@ -160,6 +160,8 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - **Check test failures carefully:** Test failures often reveal incorrect assumptions about APIs.
   - Plans live in `docs/plans/YYYYMMDD-<topic>.md`, untracked. Keep a "Status / Resume here"
     section (commit ids, next step, build/test commands) and record design changes as numbered deviations.
+  - When modifying existing files never replace existing Copyright. Add a new line with new copyright if needed.
+  - When creating a new design plan, at the end always write it down and ask the user which model to use for implementation.
 
 ## Git Guidelines
 
@@ -170,6 +172,7 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - Commit only when asked, one step per commit.
   - A fix for an unpushed commit on the feature branch: propose a fixup + autosquash into the
     commit that introduced the problem rather than a new commit.
+  - External contributors (whos email domain is not desy.de or fnal.gov) must add a `Signed-off-by` line to their commits, as described in CONTRIBUTING.md.
 
 ## 🔧 File Editing Best Practices
 
