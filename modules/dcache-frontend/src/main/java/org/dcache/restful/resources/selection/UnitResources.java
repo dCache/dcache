@@ -70,7 +70,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -107,8 +106,6 @@ import org.springframework.stereotype.Component;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/units")
 public final class UnitResources {
-
-    private static final Set<String> UNIT_TYPES = Set.of("store", "net", "protocol", "dcache");
 
     @Inject
     private PoolMonitor poolMonitor;
@@ -176,9 +173,7 @@ public final class UnitResources {
             throw new BadRequestException(e);
         }
         SelectionNames.checkValidUnitName(name);
-        if (!UNIT_TYPES.contains(type)) {
-            throw new BadRequestException("Invalid unit type: " + type);
-        }
+        SelectionNames.checkUnitType(type);
 
         return psuAdminCommands.execute("Unit: " + name + " was created",
                 Response.Status.CREATED, "psu create unit -" + type + " " + name);

@@ -69,12 +69,8 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
@@ -117,8 +113,6 @@ import org.springframework.stereotype.Component;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/poolgroups")
 public final class PoolGroupInfoResources {
-
-    private static final Pattern VALID_TAG = Pattern.compile("([A-Za-z0-9_.-]+)=[A-Za-z0-9_.-]+");
 
     @Inject
     private PoolInfoService service;
@@ -165,7 +159,7 @@ public final class PoolGroupInfoResources {
             String primary = payload.optBoolean("primary") ? " -primary" : "";
             String dynamic = payload.optBoolean("dynamic") ? " -dynamic" : "";
             JSONArray tagArray = payload.optJSONArray("tags");
-            validateTags(tagArray);
+            SelectionNames.checkValidTags(tagArray);
             String tags = (tagArray == null) ? ""
                     : IntStream.range(0, tagArray.length())
                     .mapToObj(tagArray::getString)
@@ -233,23 +227,6 @@ public final class PoolGroupInfoResources {
         return psuAdminCommands.execute(
                 "Pool: " + pool + " was removed from pool group: " + group,
                 Response.Status.OK, "psu removefrom pgroup " + group + " " + pool);
-    }
-
-    private static void validateTags(JSONArray tagArray) {
-        if (tagArray == null) {
-            return;
-        }
-        Set<String> keys = new HashSet<>();
-        for (int i = 0; i < tagArray.length(); i++) {
-            String tag = tagArray.getString(i);
-            Matcher matcher = VALID_TAG.matcher(tag);
-            if (!matcher.matches()) {
-                throw new BadRequestException("Invalid tag (expected key=value): " + tag);
-            }
-            if (!keys.add(matcher.group(1))) {
-                throw new BadRequestException("Duplicate tag key: " + matcher.group(1));
-            }
-        }
     }
 
     @GET
