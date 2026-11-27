@@ -1,15 +1,19 @@
 package org.dcache.restful.util.changeset;
 
 import java.util.Optional;
+import javax.inject.Inject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.core.Response;
+
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.dcache.cells.CuratorFrameworkAware;
+import org.dcache.poolmanager.PoolMonitor;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
