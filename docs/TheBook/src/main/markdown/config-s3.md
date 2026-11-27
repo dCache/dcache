@@ -145,10 +145,38 @@ Directories whose names start with `.` are not buckets.  The door keeps
 uploads in progress in files named `.s3-tmp-*` and in a directory
 `.s3-multipart` in each bucket; listings do not show them.
 
+A file for which the namespace has no size yet, such as one still being
+uploaded through another door, or an empty file that was created but never
+written (for example with `touch` on an NFS mount), is not an object: listings
+do not show it, and reading or copying it fails with `NoSuchKey`.
+
 Creating a bucket creates its directory, so the user needs permission to
 create directories in the bucket root.  Deleting a bucket removes its
 directory and any empty directories below it; it fails with `BucketNotEmpty`
 as long as the bucket holds a file.
+
+### Directory trees and listing performance
+
+> **IMPORTANT**
+>
+> Avoid keys that imply a deep directory tree, such as `a/b/c/d/e`, and avoid
+> S3 listings of directory trees with many levels.
+
+In most S3 stores a `/` is an ordinary character of the key.  In dCache every
+`/` is a directory level: writing `a/b/c/d/e` creates the directories `a`,
+`a/b`, `a/b/c` and `a/b/c/d` as far as they do not exist, and deleting the
+object keeps them.
+
+A listing without delimiter, such as `aws s3 ls --recursive`, has to list
+every directory below the prefix, one namespace request each, and a client
+that pages through a long listing makes the door read some of them again.
+Empty directories cost as much as others, although they add nothing to the
+result.  Deep trees therefore make such listings slow and load the namespace.
+
+Where a listing is needed, list one level at a time with the delimiter `/`, or
+give a prefix that selects a small part of the tree.  Do not move all objects
+into a single directory instead: the door reads a directory in full for every
+page of at most 1000 keys, so very large directories are slow to list too.
 
 ### Permissions
 
@@ -310,10 +338,12 @@ The door does not support:
 
 Unsupported requests fail with `NotImplemented`.
 
-A listing without delimiter walks the directory tree below the prefix.  It
-returns a shorter page, which clients continue from, once it has read
-`s3.limits.list.max-entries` directory entries.  Empty directories appear as
-common prefixes in listings with delimiter.
+A listing without delimiter walks the directory tree below the prefix.  Once
+it has read `s3.limits.list.max-entries` directory entries and found at least
+one key, it returns a shorter page, which clients continue from.  Until it
+finds a key, the limit does not apply; see
+[Directory trees and listing performance](#directory-trees-and-listing-performance).
+Empty directories appear as common prefixes in listings with delimiter.
 
 For features the door lacks, dCache can also be exported over S3 with a
 gateway on an NFS mount; see
